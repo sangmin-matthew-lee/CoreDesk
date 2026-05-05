@@ -4,10 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lead, LeadStatus } from "@/lib/types";
 
+interface UserOption {
+  id: number;
+  first_name: string;
+  last_name: string;
+}
+
 interface LeadFormProps {
   initial?: Partial<Lead>;
   onSubmit: (data: Partial<Lead>) => Promise<void>;
   submitLabel: string;
+  isManagement?: boolean;
+  salesUsers?: UserOption[];
 }
 
 const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
@@ -16,7 +24,13 @@ const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
   { value: "Neg", label: "Neg — Negative" },
 ];
 
-export default function LeadForm({ initial = {}, onSubmit, submitLabel }: LeadFormProps) {
+export default function LeadForm({
+  initial = {},
+  onSubmit,
+  submitLabel,
+  isManagement = false,
+  salesUsers = [],
+}: LeadFormProps) {
   const router = useRouter();
   const [form, setForm] = useState<Partial<Lead>>({
     name: "",
@@ -28,13 +42,16 @@ export default function LeadForm({ initial = {}, onSubmit, submitLabel }: LeadFo
     office_address: "",
     status: "Cold",
     last_contact_date: "",
+    assigned_to: null,
     ...initial,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const set = (field: keyof Lead) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+  const set =
+    (field: keyof Lead) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+      setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,7 +73,7 @@ export default function LeadForm({ initial = {}, onSubmit, submitLabel }: LeadFo
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Field label="Name *" required>
+        <Field label="Name" required>
           <input className={inputCls} value={form.name || ""} onChange={set("name")} placeholder="John Doe" required />
         </Field>
         <Field label="Company">
@@ -84,6 +101,28 @@ export default function LeadForm({ initial = {}, onSubmit, submitLabel }: LeadFo
         <Field label="Office Address">
           <input className={inputCls} value={form.office_address || ""} onChange={set("office_address")} placeholder="123 Main St, City, State" />
         </Field>
+
+        {isManagement && salesUsers.length > 0 && (
+          <Field label="Assign To">
+            <select
+              className={inputCls}
+              value={form.assigned_to ?? ""}
+              onChange={(e) =>
+                setForm((prev) => ({
+                  ...prev,
+                  assigned_to: e.target.value ? Number(e.target.value) : null,
+                }))
+              }
+            >
+              <option value="">— Unassigned —</option>
+              {salesUsers.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.first_name} {u.last_name}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
       </div>
 
       <Field label="Notes">

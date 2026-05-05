@@ -1,14 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { CHECKLIST_ITEMS } from "@/lib/types";
+import { getCurrentUser } from "@/lib/auth";
 
 export async function GET() {
   try {
-    const leads = db
-      .prepare(
-        `SELECT * FROM leads ORDER BY updated_at DESC`
-      )
-      .all();
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+    let leads;
+    if (user.dept === "Management") {
+      leads = db
+        .prepare(
+          `SELECT l.*, u.first_name || ' ' || u.last_name AS assigned_to_name
+           FROM leads l
+           LEFT JOIN users u ON l.assigned_to = u.id
+           ORDER BY l.updated_at DESC`
+        )
+        .all();
+    } else {
+      leads = db
+        .prepare(
+          `SELECT l.*, u.first_name || ' ' || u.last_name AS assigned_to_name
+           FROM leads l
+           LEFT JOIN users u ON l.assigned_to = u.id
+           WHERE l.assigned_to = ?
+           ORDER BY l.updated_at DESC`
+        )
+        .all(user.userId);
+    }
+
     return NextResponse.json(leads);
   } catch (error) {
     console.error(error);
@@ -18,17 +39,29 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
     const body = await req.json();
-    const { name, email, phone, company, title, notes, office_address, status, last_contact_date } = body;
+    const {
+      name, email, phone, company, title, notes,
+      office_address, status, last_contact_date, assigned_to,
+    } = body;
 
     if (!name) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
+    // Sales users can only create leads assigned to themselves
+    const assignedTo =
+      user.dept === "Management" && assigned_to
+        ? assigned_to
+        : user.userId;
+
     const result = db
       .prepare(
-        `INSERT INTO leads (name, email, phone, company, title, notes, office_address, status, last_contact_date)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO leads (name, email, phone, company, title, notes, office_address, status, last_contact_date, assigned_to)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         name,
@@ -39,7 +72,8 @@ export async function POST(req: NextRequest) {
         notes || "",
         office_address || "",
         status || "Cold",
-        last_contact_date || null
+        last_contact_date || null,
+        assignedTo
       );
 
     const leadId = result.lastInsertRowid;

@@ -1,11 +1,16 @@
 import Link from "next/link";
+import { getCurrentUser } from "@/lib/auth";
 
-export default function Home() {
+export default async function Home() {
+  const user = await getCurrentUser();
+
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center gap-8">
       <div>
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">CoreDesk</h1>
-        <p className="text-gray-500 text-lg">Internal tools for your team</p>
+        <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          Welcome back, {user?.firstName}
+        </h1>
+        <p className="text-gray-500 text-lg">What would you like to work on?</p>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-lg">
         <Link
@@ -22,7 +27,7 @@ export default function Home() {
             <div className="text-sm text-gray-500">Lead management & pipeline</div>
           </div>
         </Link>
-        <div className="flex flex-col items-start gap-2 p-6 bg-gray-50 border border-dashed border-gray-200 rounded-xl opacity-50">
+        <div className="flex flex-col items-start gap-2 p-6 bg-gray-50 border border-dashed border-gray-200 rounded-xl opacity-50 cursor-not-allowed">
           <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />

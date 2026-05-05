@@ -1,4 +1,5 @@
 export type LeadStatus = "Cold" | "Pos" | "Neg";
+export type Dept = "Sales" | "Management";
 
 export const CHECKLIST_ITEMS: { key: string; label: string }[] = [
   { key: "mot_meeting", label: "MOT Meeting" },
@@ -19,6 +20,15 @@ export const CHECKLIST_ITEMS: { key: string; label: string }[] = [
   { key: "warranty_letter_sent", label: "Warranty Letter Sent" },
 ];
 
+export interface User {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+  dept: Dept;
+  created_at: string;
+}
+
 export interface Lead {
   id: number;
   name: string;
@@ -30,6 +40,8 @@ export interface Lead {
   office_address: string;
   status: LeadStatus;
   last_contact_date: string | null;
+  assigned_to: number | null;
+  assigned_to_name?: string | null;
   created_at: string;
   updated_at: string;
 }

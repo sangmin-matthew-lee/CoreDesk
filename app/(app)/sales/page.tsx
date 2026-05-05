@@ -24,7 +24,7 @@ export default function SalesPage() {
     try {
       const res = await fetch("/api/leads");
       const data = await res.json();
-      setLeads(data);
+      setLeads(Array.isArray(data) ? data : []);
     } finally {
       setLoading(false);
     }
@@ -37,9 +37,10 @@ export default function SalesPage() {
     const q = search.toLowerCase();
     const matchSearch =
       !q ||
-      l.name.toLowerCase().includes(q) ||
+      l.name?.toLowerCase().includes(q) ||
       l.company?.toLowerCase().includes(q) ||
-      l.email?.toLowerCase().includes(q);
+      l.email?.toLowerCase().includes(q) ||
+      l.assigned_to_name?.toLowerCase().includes(q);
     return matchStatus && matchSearch;
   });
 
@@ -61,7 +62,6 @@ export default function SalesPage() {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Sales CRM</h1>
@@ -90,11 +90,10 @@ export default function SalesPage() {
         </div>
       </div>
 
-      {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <input
           type="text"
-          placeholder="Search by name, company, email..."
+          placeholder="Search by name, company, email, assigned to..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -116,12 +115,11 @@ export default function SalesPage() {
         </div>
       </div>
 
-      {/* Leads Table */}
       {loading ? (
         <div className="flex items-center justify-center py-20 text-gray-400 text-sm">Loading...</div>
       ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-          <div className="text-gray-300 text-5xl">📋</div>
+          <div className="text-5xl text-gray-200">📋</div>
           <p className="text-gray-500 text-sm">No leads found.</p>
           <Link href="/sales/new" className="text-indigo-600 text-sm font-medium hover:underline">
             Add your first lead →
@@ -136,7 +134,7 @@ export default function SalesPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden sm:table-cell">Company</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden md:table-cell">Title</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Email</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Assigned To</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider hidden lg:table-cell">Last Contact</th>
               </tr>
             </thead>
@@ -145,7 +143,7 @@ export default function SalesPage() {
                 <tr
                   key={lead.id}
                   className="hover:bg-indigo-50/40 transition-colors cursor-pointer"
-                  onClick={() => window.location.href = `/sales/${lead.id}`}
+                  onClick={() => (window.location.href = `/sales/${lead.id}`)}
                 >
                   <td className="px-4 py-3">
                     <StatusBadge status={lead.status} />
@@ -153,9 +151,13 @@ export default function SalesPage() {
                   <td className="px-4 py-3 font-medium text-gray-900">{lead.name}</td>
                   <td className="px-4 py-3 text-gray-600 hidden sm:table-cell">{lead.company || "—"}</td>
                   <td className="px-4 py-3 text-gray-600 hidden md:table-cell">{lead.title || "—"}</td>
-                  <td className="px-4 py-3 text-gray-500 hidden lg:table-cell">{lead.email || "—"}</td>
                   <td className="px-4 py-3 text-gray-500 hidden lg:table-cell">
-                    {lead.last_contact_date ? new Date(lead.last_contact_date).toLocaleDateString() : "—"}
+                    {lead.assigned_to_name || "—"}
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 hidden lg:table-cell">
+                    {lead.last_contact_date
+                      ? new Date(lead.last_contact_date).toLocaleDateString()
+                      : "—"}
                   </td>
                 </tr>
               ))}

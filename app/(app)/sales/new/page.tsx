@@ -1,12 +1,37 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import LeadForm from "@/components/LeadForm";
 import { Lead } from "@/lib/types";
 import Link from "next/link";
 
+interface UserOption {
+  id: number;
+  first_name: string;
+  last_name: string;
+  dept: string;
+}
+
 export default function NewLeadPage() {
   const router = useRouter();
+  const [salesUsers, setSalesUsers] = useState<UserOption[]>([]);
+  const [isManagement, setIsManagement] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((user) => {
+        if (user.dept === "Management") {
+          setIsManagement(true);
+          fetch("/api/users")
+            .then((r) => r.json())
+            .then((users) =>
+              setSalesUsers((users as UserOption[]).filter((u) => u.dept === "Sales"))
+            );
+        }
+      });
+  }, []);
 
   const handleSubmit = async (data: Partial<Lead>) => {
     const res = await fetch("/api/leads", {
@@ -30,7 +55,12 @@ export default function NewLeadPage() {
         <h1 className="text-2xl font-bold text-gray-900">Add New Lead</h1>
       </div>
       <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <LeadForm submitLabel="Create Lead" onSubmit={handleSubmit} />
+        <LeadForm
+          submitLabel="Create Lead"
+          onSubmit={handleSubmit}
+          isManagement={isManagement}
+          salesUsers={salesUsers}
+        />
       </div>
     </div>
   );

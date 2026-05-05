@@ -3,7 +3,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import StatusBadge from "@/components/StatusBadge";
 import ChecklistPanel from "@/components/ChecklistPanel";
 import LeadForm from "@/components/LeadForm";
 import { Lead, LeadStatus, LeadWithChecklist } from "@/lib/types";
@@ -16,6 +15,13 @@ const STATUS_OPTIONS: { value: LeadStatus; label: string; desc: string }[] = [
   { value: "Neg", label: "Negative", desc: "Not interested" },
 ];
 
+interface UserOption {
+  id: number;
+  first_name: string;
+  last_name: string;
+  dept: string;
+}
+
 export default function LeadDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -25,6 +31,23 @@ export default function LeadDetailPage() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isManagement, setIsManagement] = useState(false);
+  const [salesUsers, setSalesUsers] = useState<UserOption[]>([]);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((user) => {
+        if (user.dept === "Management") {
+          setIsManagement(true);
+          fetch("/api/users")
+            .then((r) => r.json())
+            .then((users) =>
+              setSalesUsers((users as UserOption[]).filter((u) => u.dept === "Sales"))
+            );
+        }
+      });
+  }, []);
 
   const fetchLead = useCallback(async () => {
     setLoading(true);
@@ -42,11 +65,10 @@ export default function LeadDetailPage() {
   const updateStatus = async (status: LeadStatus) => {
     if (!lead) return;
     setSaving(true);
-    const updated = { ...lead, status };
     const res = await fetch(`/api/leads/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updated),
+      body: JSON.stringify({ ...lead, status }),
     });
     if (res.ok) setLead(await res.json());
     setSaving(false);
@@ -83,36 +105,41 @@ export default function LeadDetailPage() {
   if (loading) {
     return <div className="flex items-center justify-center py-20 text-gray-400 text-sm">Loading...</div>;
   }
-
   if (!lead) return null;
 
   const completedCount = Object.values(lead.checklist).filter(Boolean).length;
 
   return (
     <div className="space-y-5 max-w-5xl">
-      {/* Breadcrumb */}
       <nav className="text-sm text-gray-500">
         <Link href="/sales" className="hover:text-indigo-600">Sales CRM</Link>
         <span className="mx-2">›</span>
         <span className="text-gray-900 font-medium">{lead.name}</span>
       </nav>
 
-      {/* Top card: status + checklist overview */}
+      {/* Top status card */}
       <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-        {/* Name row */}
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{lead.name}</h1>
             <p className="text-sm text-gray-500 mt-0.5">
               {[lead.title, lead.company].filter(Boolean).join(" @ ")}
             </p>
+            {lead.assigned_to_name && (
+              <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                Assigned to {lead.assigned_to_name}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setTab(tab === "edit" ? "overview" : "edit")}
               className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
             >
-              {tab === "edit" ? "Cancel Edit" : "Edit"}
+              {tab === "edit" ? "Cancel" : "Edit"}
             </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
@@ -123,7 +150,6 @@ export default function LeadDetailPage() {
           </div>
         </div>
 
-        {/* Status selector + progress */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</span>
@@ -164,7 +190,6 @@ export default function LeadDetailPage() {
 
       {tab === "overview" ? (
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-          {/* Contact info */}
           <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl p-5 space-y-4">
             <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Contact Info</h2>
             <dl className="space-y-3">
@@ -177,8 +202,10 @@ export default function LeadDetailPage() {
                 label="Last Contact"
                 value={lead.last_contact_date ? new Date(lead.last_contact_date).toLocaleDateString() : null}
               />
+              {isManagement && (
+                <InfoRow label="Assigned To" value={lead.assigned_to_name || "Unassigned"} />
+              )}
             </dl>
-
             {lead.notes && (
               <div className="pt-2 border-t border-gray-100">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Notes</p>
@@ -187,7 +214,6 @@ export default function LeadDetailPage() {
             )}
           </div>
 
-          {/* Checklist */}
           <div className="lg:col-span-3 bg-white border border-gray-200 rounded-xl p-5">
             <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Pipeline Checklist</h2>
             <ChecklistPanel checklist={lead.checklist} onChange={updateChecklist} />
@@ -200,11 +226,12 @@ export default function LeadDetailPage() {
             initial={lead}
             onSubmit={handleEdit}
             submitLabel="Save Changes"
+            isManagement={isManagement}
+            salesUsers={salesUsers}
           />
         </div>
       )}
 
-      {/* Delete confirm modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl shadow-xl p-6 max-w-sm w-full space-y-4">
@@ -234,25 +261,13 @@ export default function LeadDetailPage() {
   );
 }
 
-function InfoRow({
-  label,
-  value,
-  href,
-}: {
-  label: string;
-  value?: string | null;
-  href?: string;
-}) {
+function InfoRow({ label, value, href }: { label: string; value?: string | null; href?: string }) {
   if (!value) return null;
   return (
     <div className="flex gap-2">
-      <dt className="text-xs text-gray-400 w-20 shrink-0 pt-0.5">{label}</dt>
+      <dt className="text-xs text-gray-400 w-24 shrink-0 pt-0.5">{label}</dt>
       <dd className="text-sm text-gray-900 break-all">
-        {href ? (
-          <a href={href} className="text-indigo-600 hover:underline">{value}</a>
-        ) : (
-          value
-        )}
+        {href ? <a href={href} className="text-indigo-600 hover:underline">{value}</a> : value}
       </dd>
     </div>
   );
