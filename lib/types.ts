@@ -1,4 +1,4 @@
-export type LeadStatus = "Cold" | "Pos" | "Neg";
+export type LeadStatus = "Cold" | "Positive" | "Negative" | "Closed";
 export type Dept = "Sales" | "Management";
 
 export const CHECKLIST_ITEMS: { key: string; label: string }[] = [
@@ -42,6 +42,8 @@ export interface Lead {
   last_contact_date: string | null;
   assigned_to: number | null;
   assigned_to_name?: string | null;
+  checklist_completed?: number;
+  latest_stage_key?: string | null;
   created_at: string;
   updated_at: string;
 }

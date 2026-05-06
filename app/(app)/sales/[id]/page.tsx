@@ -11,8 +11,9 @@ type Tab = "overview" | "edit";
 
 const STATUS_OPTIONS: { value: LeadStatus; label: string; desc: string }[] = [
   { value: "Cold", label: "Cold", desc: "Cold calling" },
-  { value: "Pos", label: "Positive", desc: "Interested" },
-  { value: "Neg", label: "Negative", desc: "Not interested" },
+  { value: "Positive", label: "Positive", desc: "Interested" },
+  { value: "Negative", label: "Negative", desc: "Not interested" },
+  { value: "Closed", label: "Closed", desc: "Deal closed" },
 ];
 
 interface UserOption {
@@ -111,11 +112,22 @@ export default function LeadDetailPage() {
 
   return (
     <div className="space-y-5 max-w-5xl">
-      <nav className="text-sm text-gray-500">
-        <Link href="/sales" className="hover:text-indigo-600">Sales CRM</Link>
-        <span className="mx-2">›</span>
-        <span className="text-gray-900 font-medium">{lead.name}</span>
-      </nav>
+      <div className="flex items-center gap-3">
+        <Link
+          href="/sales"
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-indigo-600 transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back
+        </Link>
+        <nav className="text-sm text-gray-400 flex items-center gap-1.5">
+          <Link href="/sales" className="hover:text-indigo-600">Sales CRM</Link>
+          <span>›</span>
+          <span className="text-gray-700 font-medium">{lead.name}</span>
+        </nav>
+      </div>
 
       {/* Top status card */}
       <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
@@ -164,9 +176,11 @@ export default function LeadDetailPage() {
                     lead.status === opt.value
                       ? opt.value === "Cold"
                         ? "bg-blue-600 text-white border-blue-600"
-                        : opt.value === "Pos"
+                        : opt.value === "Positive"
                         ? "bg-green-600 text-white border-green-600"
-                        : "bg-red-600 text-white border-red-600"
+                        : opt.value === "Negative"
+                        ? "bg-red-600 text-white border-red-600"
+                        : "bg-gray-600 text-white border-gray-600"
                       : "bg-white text-gray-500 border-gray-200 hover:border-gray-300"
                   }`}
                 >
@@ -225,6 +239,7 @@ export default function LeadDetailPage() {
           <LeadForm
             initial={lead}
             onSubmit={handleEdit}
+            onCancel={() => setTab("overview")}
             submitLabel="Save Changes"
             isManagement={isManagement}
             salesUsers={salesUsers}

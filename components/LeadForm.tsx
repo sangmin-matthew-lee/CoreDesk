@@ -13,6 +13,7 @@ interface UserOption {
 interface LeadFormProps {
   initial?: Partial<Lead>;
   onSubmit: (data: Partial<Lead>) => Promise<void>;
+  onCancel?: () => void;
   submitLabel: string;
   isManagement?: boolean;
   salesUsers?: UserOption[];
@@ -20,13 +21,15 @@ interface LeadFormProps {
 
 const STATUS_OPTIONS: { value: LeadStatus; label: string }[] = [
   { value: "Cold", label: "Cold — Cold Calling" },
-  { value: "Pos", label: "Pos — Positive" },
-  { value: "Neg", label: "Neg — Negative" },
+  { value: "Positive", label: "Positive — Interested" },
+  { value: "Negative", label: "Negative — Not Interested" },
+  { value: "Closed", label: "Closed — Deal Closed" },
 ];
 
 export default function LeadForm({
   initial = {},
   onSubmit,
+  onCancel,
   submitLabel,
   isManagement = false,
   salesUsers = [],
@@ -86,7 +89,7 @@ export default function LeadForm({
           <input className={inputCls} type="email" value={form.email || ""} onChange={set("email")} placeholder="john@example.com" />
         </Field>
         <Field label="Phone">
-          <input className={inputCls} value={form.phone || ""} onChange={set("phone")} placeholder="+1 555-0100" />
+          <input className={inputCls} value={form.phone || ""} onChange={set("phone")} placeholder="123-456-7890" />
         </Field>
         <Field label="Status">
           <select className={inputCls} value={form.status || "Cold"} onChange={set("status")}>
@@ -145,7 +148,7 @@ export default function LeadForm({
         </button>
         <button
           type="button"
-          onClick={() => router.back()}
+          onClick={() => onCancel ? onCancel() : router.back()}
           className="px-5 py-2.5 bg-gray-100 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
         >
           Cancel

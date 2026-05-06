@@ -66,4 +66,10 @@ try {
   // Column already exists
 }
 
+// Migration: normalize legacy status values to new labels
+db.exec(`
+  UPDATE leads SET status = 'Positive' WHERE status = 'Pos';
+  UPDATE leads SET status = 'Negative' WHERE status = 'Neg';
+`);
+
 export default db;

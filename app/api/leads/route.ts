@@ -8,25 +8,22 @@ export async function GET() {
     const user = await getCurrentUser();
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const baseSelect = `
+      SELECT
+        l.*,
+        u.first_name || ' ' || u.last_name AS assigned_to_name,
+        (SELECT COUNT(*) FROM lead_checklist lc WHERE lc.lead_id = l.id AND lc.completed = 1) AS checklist_completed,
+        (SELECT lc2.item_key FROM lead_checklist lc2 WHERE lc2.lead_id = l.id AND lc2.completed = 1 ORDER BY lc2.id DESC LIMIT 1) AS latest_stage_key
+      FROM leads l
+      LEFT JOIN users u ON l.assigned_to = u.id
+    `;
+
     let leads;
     if (user.dept === "Management") {
-      leads = db
-        .prepare(
-          `SELECT l.*, u.first_name || ' ' || u.last_name AS assigned_to_name
-           FROM leads l
-           LEFT JOIN users u ON l.assigned_to = u.id
-           ORDER BY l.updated_at DESC`
-        )
-        .all();
+      leads = db.prepare(`${baseSelect} ORDER BY l.updated_at DESC`).all();
     } else {
       leads = db
-        .prepare(
-          `SELECT l.*, u.first_name || ' ' || u.last_name AS assigned_to_name
-           FROM leads l
-           LEFT JOIN users u ON l.assigned_to = u.id
-           WHERE l.assigned_to = ?
-           ORDER BY l.updated_at DESC`
-        )
+        .prepare(`${baseSelect} WHERE l.assigned_to = ? ORDER BY l.updated_at DESC`)
         .all(user.userId);
     }
 

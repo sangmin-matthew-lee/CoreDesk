@@ -6,9 +6,9 @@ import { useRouter } from "next/navigation";
 
 type Dept = "Sales" | "Management";
 
-const DEPT_OPTIONS: { value: Dept; label: string; desc: string }[] = [
-  { value: "Sales", label: "Sales", desc: "Access your own leads & clients" },
-  { value: "Management", label: "Management", desc: "Full access & team oversight" },
+const DEPT_OPTIONS: { value: Dept; label: string }[] = [
+  { value: "Sales", label: "Sales"},
+  { value: "Management", label: "Management" },
 ];
 
 export default function RegisterPage() {
@@ -53,7 +53,7 @@ export default function RegisterPage() {
         setError(data.error || "Registration failed");
         return;
       }
-      router.push("/sales");
+      router.push("/");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
@@ -132,7 +132,6 @@ export default function RegisterPage() {
                   <span className={`text-sm font-semibold ${form.dept === opt.value ? "text-indigo-700" : "text-gray-700"}`}>
                     {opt.label}
                   </span>
-                  <span className="text-xs text-gray-500 mt-0.5">{opt.desc}</span>
                 </button>
               ))}
             </div>

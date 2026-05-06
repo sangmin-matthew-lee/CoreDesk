@@ -101,6 +101,16 @@ export async function PUT(req: NextRequest, { params }: Params) {
         }
       });
       updateMany();
+
+      // Auto-close lead when all checklist items are completed
+      const completedCount = db
+        .prepare(`SELECT COUNT(*) AS cnt FROM lead_checklist WHERE lead_id = ? AND completed = 1`)
+        .get(id) as { cnt: number };
+      const totalCount = CHECKLIST_ITEMS.length;
+
+      if (completedCount.cnt === totalCount) {
+        db.prepare(`UPDATE leads SET status = 'Closed', updated_at = datetime('now') WHERE id = ?`).run(id);
+      }
     }
 
     const lead = db

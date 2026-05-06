@@ -5,13 +5,17 @@ const config: Record<LeadStatus, { label: string; className: string }> = {
     label: "Cold",
     className: "bg-blue-100 text-blue-700 border border-blue-200",
   },
-  Pos: {
+  Positive: {
     label: "Positive",
     className: "bg-green-100 text-green-700 border border-green-200",
   },
-  Neg: {
+  Negative: {
     label: "Negative",
     className: "bg-red-100 text-red-700 border border-red-200",
+  },
+  Closed: {
+    label: "Closed",
+    className: "bg-gray-100 text-gray-600 border border-gray-200",
   },
 };
 
