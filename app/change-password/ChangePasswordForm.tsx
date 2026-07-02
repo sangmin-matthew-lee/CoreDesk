@@ -1,16 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { useRouter } from "next/navigation";
 
-function LoginForm() {
+export default function ChangePasswordForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const from = searchParams.get("from") || "/";
-
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ password: "", confirmPassword: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -20,19 +15,32 @@ function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (form.password !== form.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    if (form.password.length < 8) {
+      setError("Password must be at least 8 characters long");
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("/api/auth/change-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
+
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Login failed");
+        setError(data.error || "Failed to update password");
         return;
       }
-      router.push(from);
+
+      router.push("/sales");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");
@@ -45,8 +53,10 @@ function LoginForm() {
     <div className="w-full max-w-md">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">Sign in</h1>
-          <p className="text-sm text-gray-500 mt-1">Access your CoreDesk workspace</p>
+          <h1 className="text-2xl font-bold text-gray-900">Change Password</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            You are logging in with a temporary password. Please set a secure password of your choice.
+          </p>
         </div>
 
         {error && (
@@ -60,33 +70,28 @@ function LoginForm() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-gray-700">Email</label>
-            <input
-              type="email"
-              required
-              value={form.email}
-              onChange={set("email")}
-              placeholder="you@company.com"
-              className={inputCls}
-              autoComplete="email"
-            />
-          </div>
-
-          <div className="space-y-1.5">
-            <div className="flex justify-between items-center">
-              <label className="block text-sm font-medium text-gray-700">Password</label>
-              <Link href="/reset-password" className="text-xs text-indigo-600 hover:underline">
-                Forgot password?
-              </Link>
-            </div>
+            <label className="block text-sm font-medium text-gray-700">New Password</label>
             <input
               type="password"
               required
               value={form.password}
               onChange={set("password")}
+              placeholder="Min 8 characters"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+              autoComplete="new-password"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-gray-700">Confirm New Password</label>
+            <input
+              type="password"
+              required
+              value={form.confirmPassword}
+              onChange={set("confirmPassword")}
               placeholder="••••••••"
-              className={inputCls}
-              autoComplete="current-password"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
+              autoComplete="new-password"
             />
           </div>
 
@@ -95,21 +100,10 @@ function LoginForm() {
             disabled={loading}
             className="w-full py-2.5 bg-indigo-600 text-white rounded-lg text-sm font-semibold hover:bg-indigo-700 disabled:opacity-50 transition-colors"
           >
-            {loading ? "Signing in..." : "Sign in"}
+            {loading ? "Updating password..." : "Update password"}
           </button>
         </form>
       </div>
     </div>
   );
 }
-
-export default function LoginPage() {
-  return (
-    <Suspense>
-      <LoginForm />
-    </Suspense>
-  );
-}
-
-const inputCls =
-  "w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition";

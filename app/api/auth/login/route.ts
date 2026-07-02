@@ -11,6 +11,7 @@ interface UserRow {
   email: string;
   password_hash: string;
   dept: Dept;
+  blocked: number;
 }
 
 export async function POST(req: NextRequest) {
@@ -35,7 +36,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (user.blocked === 1) {
+      return NextResponse.json(
+        { error: "Your account has been blocked. Please contact management." },
+        { status: 403 }
+      );
+    }
+
     const valid = await bcrypt.compare(password, user.password_hash);
+
     if (!valid) {
       return NextResponse.json(
         { error: "Invalid email or password" },

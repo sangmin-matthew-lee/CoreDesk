@@ -48,3 +48,39 @@ export async function sendPasswordResetEmail(
     `,
   });
 }
+
+export async function sendWelcomeEmail(
+  email: string,
+  firstName: string,
+  tempPass: string
+) {
+  const transporter = createTransporter();
+
+  if (!transporter) {
+    // Dev mode — print to console instead of sending email
+    console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log("[CoreDesk] Welcome / Temp Password (dev mode — no SMTP configured)");
+    console.log(`  To: ${email}`);
+    console.log(`  Temp Password: ${tempPass}`);
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+    return;
+  }
+
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM || "CoreDesk <noreply@coredesk.com>",
+    to: email,
+    subject: "Welcome to CoreDesk - Your temporary login details",
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+        <h2 style="color: #4f46e5;">Welcome to CoreDesk</h2>
+        <p>Hi ${firstName},</p>
+        <p>An account has been created for you on CoreDesk. Here are your login details:</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Temporary Password:</strong> ${tempPass}</p>
+        <p>Upon your first sign in, you will be prompted to change this temporary password to one of your choice.</p>
+        <p style="color:#888;font-size:13px;">Please change your password immediately upon logging in.</p>
+      </div>
+    `,
+  });
+}
+

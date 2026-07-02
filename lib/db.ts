@@ -15,61 +15,77 @@ db.pragma("journal_mode = WAL");
 db.pragma("foreign_keys = ON");
 
 db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    email TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
-    dept TEXT NOT NULL DEFAULT 'Sales',
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
+    CREATE TABLE IF NOT EXISTS users (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      first_name TEXT NOT NULL,
+      last_name TEXT NOT NULL,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      dept TEXT NOT NULL DEFAULT 'Sales',
+      blocked INTEGER NOT NULL DEFAULT 0,
+      requires_password_change INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
 
-  CREATE TABLE IF NOT EXISTS password_reset_tokens (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    token TEXT NOT NULL UNIQUE,
-    expires_at TEXT NOT NULL,
-    used INTEGER NOT NULL DEFAULT 0
-  );
+    CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      token TEXT NOT NULL UNIQUE,
+      expires_at TEXT NOT NULL,
+      used INTEGER NOT NULL DEFAULT 0
+    );
 
-  CREATE TABLE IF NOT EXISTS leads (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL,
-    email TEXT,
-    phone TEXT,
-    company TEXT,
-    title TEXT,
-    notes TEXT,
-    office_address TEXT,
-    status TEXT NOT NULL DEFAULT 'Cold',
-    last_contact_date TEXT,
-    assigned_to INTEGER REFERENCES users(id),
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
+    CREATE TABLE IF NOT EXISTS leads (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      email TEXT,
+      phone TEXT,
+      company TEXT,
+      title TEXT,
+      notes TEXT,
+      office_address TEXT,
+      status TEXT NOT NULL DEFAULT 'Cold',
+      last_contact_date TEXT,
+      assigned_to INTEGER REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
 
-  CREATE TABLE IF NOT EXISTS lead_checklist (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    lead_id INTEGER NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
-    item_key TEXT NOT NULL,
-    completed INTEGER NOT NULL DEFAULT 0,
-    completed_at TEXT,
-    UNIQUE(lead_id, item_key)
-  );
-`);
+    CREATE TABLE IF NOT EXISTS lead_checklist (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      lead_id INTEGER NOT NULL REFERENCES leads(id) ON DELETE CASCADE,
+      item_key TEXT NOT NULL,
+      completed INTEGER NOT NULL DEFAULT 0,
+      completed_at TEXT,
+      UNIQUE(lead_id, item_key)
+    );
+  `);
 
-// Migration: add assigned_to if upgrading from pre-auth schema
-try {
-  db.exec(`ALTER TABLE leads ADD COLUMN assigned_to INTEGER`);
-} catch {
-  // Column already exists
-}
+  // Migration: add assigned_to if upgrading from pre-auth schema
+  try {
+    db.exec(`ALTER TABLE leads ADD COLUMN assigned_to INTEGER`);
+  } catch {
+    // Column already exists
+  }
 
-// Migration: normalize legacy status values to new labels
-db.exec(`
-  UPDATE leads SET status = 'Positive' WHERE status = 'Pos';
-  UPDATE leads SET status = 'Negative' WHERE status = 'Neg';
-`);
+  // Migration: add blocked and requires_password_change if upgrading users table
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN blocked INTEGER NOT NULL DEFAULT 0`);
+  } catch {
+    // Column already exists
+  }
 
-export default db;
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN requires_password_change INTEGER NOT NULL DEFAULT 0`);
+  } catch {
+    // Column already exists
+  }
+
+  // Migration: normalize legacy status values to new labels
+  db.exec(`
+    UPDATE leads SET status = 'Positive' WHERE status = 'Pos';
+    UPDATE leads SET status = 'Negative' WHERE status = 'Neg';
+  `);
+
+  export default db;
+  

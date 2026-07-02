@@ -1,11 +1,24 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
+import db from "@/lib/db";
 import LogoutButton from "@/components/LogoutButton";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const user = await getCurrentUser();
+  const user = await getCurrentUser(false);
   if (!user) redirect("/login");
+
+  const dbUser = db
+    .prepare("SELECT blocked, requires_password_change FROM users WHERE id = ?")
+    .get(user.userId) as { blocked: number; requires_password_change: number } | undefined;
+
+  if (!dbUser || dbUser.blocked === 1) {
+    redirect("/api/auth/logout?reason=blocked");
+  }
+
+  if (dbUser.requires_password_change === 1) {
+    redirect("/change-password");
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -25,7 +38,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             >
               Sales CRM
             </Link>
+            {user.dept === "Management" && (
+              <Link
+                href="/accounts"
+                className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+              >
+                Account Manage
+              </Link>
+            )}
           </nav>
+
 
           <div className="flex items-center gap-3">
             <div className="text-right hidden sm:block">
