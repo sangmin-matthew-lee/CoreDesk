@@ -12,6 +12,7 @@ interface UserRow {
   password_hash: string;
   dept: Dept;
   blocked: number;
+  approved: number;
 }
 
 export async function POST(req: NextRequest) {
@@ -33,6 +34,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "Invalid email or password" },
         { status: 401 }
+      );
+    }
+
+    if (user.approved === 0) {
+      return NextResponse.json(
+        { error: "Your account is pending approval from an administrator." },
+        { status: 403 }
       );
     }
 

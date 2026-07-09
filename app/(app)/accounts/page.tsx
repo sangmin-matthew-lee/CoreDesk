@@ -8,8 +8,10 @@ interface UserAccount {
   first_name: string;
   last_name: string;
   email: string;
+  phone?: string | null;
   dept: "Sales" | "Management";
   blocked: number;
+  approved: number;
   requires_password_change: number;
   created_at: string;
 }
@@ -18,7 +20,7 @@ export default function AccountsPage() {
   const [users, setUsers] = useState<UserAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<{ userId: number; dept: string } | null>(null);
-  const [activeTab, setActiveTab] = useState<"manage" | "create">("manage");
+  const [activeTab, setActiveTab] = useState<"manage" | "create" | "applications">("manage");
 
   // Form State
   const [form, setForm] = useState({
@@ -33,6 +35,9 @@ export default function AccountsPage() {
     tempPass: string;
   } | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  const approvedUsers = users.filter((u) => u.approved !== 0);
+  const pendingUsers = users.filter((u) => u.approved === 0);
 
   const fetchUsers = async () => {
     try {
@@ -151,6 +156,48 @@ export default function AccountsPage() {
     }
   };
 
+  const handleApproveUser = async (user: UserAccount) => {
+    try {
+      const res = await fetch(`/api/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ approved: true }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Failed to approve user");
+        return;
+      }
+
+      fetchUsers();
+    } catch {
+      alert("Something went wrong");
+    }
+  };
+
+  const handleRejectUser = async (user: UserAccount) => {
+    if (!confirm(`Are you sure you want to reject and delete ${user.first_name} ${user.last_name}'s registration application?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/users/${user.id}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Failed to reject registration");
+        return;
+      }
+
+      fetchUsers();
+    } catch {
+      alert("Something went wrong");
+    }
+  };
+
   const copyCredentials = () => {
     if (!formSuccess) return;
     const text = `CoreDesk Login Details\nEmail: ${formSuccess.email}\nTemporary Password: ${formSuccess.tempPass}`;
@@ -172,7 +219,7 @@ export default function AccountsPage() {
         </div>
 
         {/* Tab Selection */}
-        <div className="flex bg-gray-100 p-1 rounded-lg self-start md:self-auto border border-gray-200">
+        <div className="flex bg-gray-100 p-1 rounded-lg self-start md:self-auto border border-gray-200 gap-1">
           <button
             onClick={() => setActiveTab("manage")}
             className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-colors ${
@@ -182,6 +229,21 @@ export default function AccountsPage() {
             }`}
           >
             Manage Accounts
+          </button>
+          <button
+            onClick={() => setActiveTab("applications")}
+            className={`px-4 py-1.5 rounded-md text-xs font-semibold transition-colors relative ${
+              activeTab === "applications"
+                ? "bg-white text-indigo-600 shadow-sm"
+                : "text-gray-600 hover:text-gray-900"
+            }`}
+          >
+            Pending Approvals
+            {pendingUsers.length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-indigo-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
+                {pendingUsers.length}
+              </span>
+            )}
           </button>
           <button
             onClick={() => setActiveTab("create")}
@@ -255,7 +317,9 @@ export default function AccountsPage() {
             <table className="min-w-full text-sm">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                  <th className="px-4 py-3">User</th>
+                  <th className="px-4 py-3">User Name</th>
+                  <th className="px-4 py-3">Email</th>
+                  <th className="px-4 py-3">Number</th>
                   <th className="px-4 py-3">Department</th>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Password</th>
@@ -263,31 +327,34 @@ export default function AccountsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {users.map((acc) => {
+                {approvedUsers.map((acc) => {
                   const isSelf = acc.id === currentUser?.userId;
                   const isMgmt = acc.dept === "Management";
 
                   return (
                     <tr key={acc.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center gap-2.5">
                           <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
                             isMgmt ? "bg-purple-100 text-purple-700" : "bg-indigo-100 text-indigo-700"
                           }`}>
                             {acc.first_name.charAt(0).toUpperCase()}
                           </span>
-                          <div>
-                            <div className="font-medium text-gray-900 flex items-center gap-1.5">
-                              {acc.first_name} {acc.last_name}
-                              {isSelf && (
-                                <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
-                                  You
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-xs text-gray-400 font-mono">{acc.email}</div>
+                          <div className="font-medium text-gray-900 flex items-center gap-1.5">
+                            {acc.first_name} {acc.last_name}
+                            {isSelf && (
+                              <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
+                                You
+                              </span>
+                            )}
                           </div>
                         </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-gray-600 font-mono text-xs">
+                        {acc.email}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-gray-600">
+                        {acc.phone || "—"}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
@@ -347,6 +414,80 @@ export default function AccountsPage() {
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      ) : activeTab === "applications" ? (
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+          <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+            <h2 className="font-semibold text-gray-800 text-sm">Pending Registration Applications</h2>
+            <span className="text-xs text-gray-500 font-medium">{pendingUsers.length} application(s)</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            {pendingUsers.length === 0 ? (
+              <div className="text-center py-12 text-gray-500 text-sm">
+                No pending registration applications found.
+              </div>
+            ) : (
+              <table className="min-w-full text-sm">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                    <th className="px-4 py-3">User Name</th>
+                    <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3">Phone</th>
+                    <th className="px-4 py-3">Role</th>
+                    <th className="px-4 py-3">Applied Date</th>
+                    <th className="px-4 py-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {pendingUsers.map((acc) => (
+                    <tr key={acc.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0">
+                            {acc.first_name.charAt(0).toUpperCase()}
+                          </span>
+                          <div className="font-medium text-gray-900">
+                            {acc.first_name} {acc.last_name}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-gray-600 font-mono text-xs">
+                        {acc.email}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-gray-600">
+                        {acc.phone || "—"}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                          {acc.dept}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-gray-500 text-xs font-mono">
+                        {new Date(acc.created_at).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-right">
+                        <div className="inline-flex items-center gap-2">
+                          <button
+                            onClick={() => handleApproveUser(acc)}
+                            className="px-3 py-1 text-xs font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 transition-colors shadow-sm"
+                          >
+                            Approve
+                          </button>
+                          <button
+                            onClick={() => handleRejectUser(acc)}
+                            className="px-3 py-1 text-xs font-semibold text-red-600 bg-white border border-red-200 rounded-md hover:bg-red-50 transition-colors"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       ) : (

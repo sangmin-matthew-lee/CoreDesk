@@ -26,7 +26,7 @@ export async function GET() {
 
   const users = db
     .prepare(
-      `SELECT id, first_name, last_name, email, dept, blocked, requires_password_change, created_at 
+      `SELECT id, first_name, last_name, email, phone, dept, blocked, requires_password_change, approved, created_at 
        FROM users 
        ORDER BY first_name`
     )

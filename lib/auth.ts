@@ -11,8 +11,8 @@ export async function getCurrentUser(checkBlocked = true): Promise<JWTPayload | 
   if (!payload) return null;
 
   if (checkBlocked) {
-    const dbUser = db.prepare("SELECT blocked FROM users WHERE id = ?").get(payload.userId) as { blocked: number } | undefined;
-    if (!dbUser || dbUser.blocked) {
+    const dbUser = db.prepare("SELECT blocked, approved FROM users WHERE id = ?").get(payload.userId) as { blocked: number; approved: number } | undefined;
+    if (!dbUser || dbUser.blocked || !dbUser.approved) {
       return null;
     }
   }

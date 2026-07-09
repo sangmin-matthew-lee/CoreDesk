@@ -98,6 +98,15 @@ function LoginForm() {
             {loading ? "Signing in..." : "Sign in"}
           </button>
         </form>
+
+        <div className="text-center pt-2 border-t border-gray-100">
+          <p className="text-xs text-gray-500">
+            Don't have an account?{" "}
+            <Link href="/register" className="text-indigo-600 font-semibold hover:underline">
+              Create an account
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

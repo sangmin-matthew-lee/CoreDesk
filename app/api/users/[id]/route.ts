@@ -40,12 +40,23 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       );
     }
 
-    const { blocked } = await req.json();
-    if (typeof blocked !== "boolean") {
-      return NextResponse.json({ error: "Invalid blocked status value" }, { status: 400 });
+    const body = await req.json();
+
+    if ("blocked" in body) {
+      const { blocked } = body;
+      if (typeof blocked !== "boolean") {
+        return NextResponse.json({ error: "Invalid blocked status value" }, { status: 400 });
+      }
+      db.prepare("UPDATE users SET blocked = ? WHERE id = ?").run(blocked ? 1 : 0, userId);
     }
 
-    db.prepare("UPDATE users SET blocked = ? WHERE id = ?").run(blocked ? 1 : 0, userId);
+    if ("approved" in body) {
+      const { approved } = body;
+      if (typeof approved !== "boolean") {
+        return NextResponse.json({ error: "Invalid approved status value" }, { status: 400 });
+      }
+      db.prepare("UPDATE users SET approved = ? WHERE id = ?").run(approved ? 1 : 0, userId);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

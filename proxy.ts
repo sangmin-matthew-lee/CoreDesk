@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 import { verifyToken, TOKEN_COOKIE } from "@/lib/jwt";
 
 // Paths that don't require auth (public pages)
-const AUTH_PAGES = ["/login", "/reset-password"];
+const AUTH_PAGES = ["/login", "/reset-password", "/register"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

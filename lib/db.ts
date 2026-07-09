@@ -81,6 +81,20 @@ db.exec(`
     // Column already exists
   }
 
+  // Migration: add phone column
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN phone TEXT`);
+  } catch {
+    // Column already exists
+  }
+
+  // Migration: add approved column (default 1 for existing users)
+  try {
+    db.exec(`ALTER TABLE users ADD COLUMN approved INTEGER NOT NULL DEFAULT 1`);
+  } catch {
+    // Column already exists
+  }
+
   // Migration: normalize legacy status values to new labels
   db.exec(`
     UPDATE leads SET status = 'Positive' WHERE status = 'Pos';
