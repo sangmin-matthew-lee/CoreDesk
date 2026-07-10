@@ -104,15 +104,18 @@ db.exec(`
   `);
 
   // Seed default admin if database is empty (production bootstrapping)
-  const userCount = db.prepare("SELECT COUNT(*) as count FROM users").get() as { count: number };
-  if (userCount.count === 0) {
-    const defaultPassword = "adminpassword123";
-    const passwordHash = bcrypt.hashSync(defaultPassword, 12);
-    db.prepare(`
-      INSERT INTO users (first_name, last_name, email, phone, password_hash, dept, requires_password_change, blocked, approved)
-      VALUES (?, ?, ?, ?, ?, 'Management', 1, 0, 1)
-    `).run("CoreDesk", "Manager", "coredesk.mng@coredesk.com", "—", passwordHash);
-    console.log("Database seeded with default admin user: coredesk.mng@coredesk.com / adminpassword123");
+  // Skip during next build phase to prevent multi-worker race conditions
+  if (process.env.NEXT_PHASE !== "phase-production-build") {
+    const userCount = db.prepare("SELECT COUNT(*) as count FROM users").get() as { count: number };
+    if (userCount.count === 0) {
+      const defaultPassword = "adminpassword123";
+      const passwordHash = bcrypt.hashSync(defaultPassword, 12);
+      db.prepare(`
+        INSERT OR IGNORE INTO users (first_name, last_name, email, phone, password_hash, dept, requires_password_change, blocked, approved)
+        VALUES (?, ?, ?, ?, ?, 'Management', 1, 0, 1)
+      `).run("CoreDesk", "Manager", "coredesk.mng@coredesk.com", "—", passwordHash);
+      console.log("Database seeded with default admin user: coredesk.mng@coredesk.com / adminpassword123");
+    }
   }
 
   export default db;
