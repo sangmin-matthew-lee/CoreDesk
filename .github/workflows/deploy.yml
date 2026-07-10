@@ -57,7 +57,13 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Terraform Init
-        run: terraform init
+        run: |
+          # Create GCS bucket if it doesn't exist (using gsutil)
+          gsutil mb -p ${{ secrets.GCP_PROJECT_ID }} -c standard -l us-central1 gs://coredesk-tfstate-${{ secrets.GCP_PROJECT_ID }} || true
+          # Initialize terraform with dynamic backend configuration
+          terraform init \
+            -backend-config="bucket=coredesk-tfstate-${{ secrets.GCP_PROJECT_ID }}" \
+            -backend-config="prefix=terraform/state"
         working-directory: ./terraform
 
       - name: Terraform Apply
