@@ -6,7 +6,10 @@ services:
     ports:
       - "80:3000"
     volumes:
-      - ./data:/app/data
+      - coredesk-data:/app/data
     restart: always
     environment:
       - NODE_ENV=production
+
+volumes:
+  coredesk-data:
