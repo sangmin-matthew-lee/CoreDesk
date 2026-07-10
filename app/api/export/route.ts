@@ -3,6 +3,9 @@ import db from "@/lib/db";
 import { CHECKLIST_ITEMS } from "@/lib/types";
 import * as XLSX from "xlsx";
 
+export const dynamic = "force-dynamic";
+
+
 export async function GET() {
   try {
     const leads = db.prepare(`SELECT * FROM leads ORDER BY updated_at DESC`).all() as Record<string, unknown>[];

@@ -3,6 +3,9 @@ import db from "@/lib/db";
 import { CHECKLIST_ITEMS } from "@/lib/types";
 import { getCurrentUser } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
+
 export async function GET() {
   try {
     const user = await getCurrentUser();

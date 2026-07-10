@@ -6,6 +6,9 @@ import { getCurrentUser } from "@/lib/auth";
 import { sendWelcomeEmail } from "@/lib/email";
 import type { Dept } from "@/lib/types";
 
+export const dynamic = "force-dynamic";
+
+
 function generateTempPassword(): string {
   const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%&*";
   let password = "";

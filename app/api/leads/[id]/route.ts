@@ -3,6 +3,9 @@ import db from "@/lib/db";
 import { CHECKLIST_ITEMS } from "@/lib/types";
 import { getCurrentUser } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
+
 type Params = { params: Promise<{ id: string }> };
 
 interface LeadRow {

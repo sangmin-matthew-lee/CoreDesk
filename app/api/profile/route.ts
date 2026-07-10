@@ -3,6 +3,9 @@ import bcrypt from "bcryptjs";
 import db from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 
+export const dynamic = "force-dynamic";
+
+
 export async function GET() {
   try {
     const session = await getCurrentUser();
