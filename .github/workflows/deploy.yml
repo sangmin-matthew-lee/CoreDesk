@@ -83,21 +83,24 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.VM_SSH_PRIVATE_KEY }}
         run: |
-          echo "Waiting for VM to fully boot and open SSH port..."
-          sleep 15
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ steps.tf-ip.outputs.vm_ip }} >> ~/.ssh/known_hosts
-
+          
+          echo "Waiting for SSH port 22 to open on ${{ steps.tf-ip.outputs.vm_ip }}..."
+          for i in {1..30}; do
+            nc -zv -w5 ${{ steps.tf-ip.outputs.vm_ip }} 22 && break
+            echo "SSH not ready yet, retrying in 5s... ($i/30)"
+            sleep 5
+          done
 
       - name: Copy docker-compose.yml to VM
         run: |
-          scp ./docker-compose.yml debian@${{ steps.tf-ip.outputs.vm_ip }}:~/docker-compose.yml
+          scp -o StrictHostKeyChecking=no ./docker-compose.yml debian@${{ steps.tf-ip.outputs.vm_ip }}:~/docker-compose.yml
 
       - name: Deploy to VM via SSH
         run: |
-          ssh debian@${{ steps.tf-ip.outputs.vm_ip }} "
+          ssh -o StrictHostKeyChecking=no debian@${{ steps.tf-ip.outputs.vm_ip }} "
             export DOCKER_IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/coredesk:latest
             # Pull new image
             sudo docker compose pull
@@ -106,3 +109,4 @@ jobs:
             # Prune old unused images to save disk space on e2-micro
             sudo docker image prune -f
           "
+
