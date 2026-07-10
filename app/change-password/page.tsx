@@ -20,7 +20,7 @@ export default async function ChangePasswordPage() {
   }
 
   if (dbUser.requires_password_change === 0) {
-    redirect("/sales");
+    redirect(user.dept === "Management" ? "/accounts" : "/sales");
   }
 
   return (

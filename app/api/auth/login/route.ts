@@ -68,7 +68,7 @@ export async function POST(req: NextRequest) {
       lastName: user.last_name,
     });
 
-    const res = NextResponse.json({ success: true });
+    const res = NextResponse.json({ success: true, dept: user.dept });
     res.cookies.set(TOKEN_COOKIE, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

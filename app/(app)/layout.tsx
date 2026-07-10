@@ -46,6 +46,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 Account Manage
               </Link>
             )}
+            <Link
+              href="/settings"
+              className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+            >
+              Settings
+            </Link>
           </nav>
 
 

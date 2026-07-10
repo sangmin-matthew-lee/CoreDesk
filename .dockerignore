@@ -1,0 +1,12 @@
+node_modules
+.next
+data
+.git
+.gitignore
+README.md
+terraform
+.github
+Dockerfile
+docker-compose.yml
+.env*
+

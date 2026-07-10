@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
       "UPDATE users SET password_hash = ?, requires_password_change = 0 WHERE id = ?"
     ).run(passwordHash, user.userId);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, dept: user.dept });
   } catch (error) {
     console.error("Change password error:", error);
     return NextResponse.json({ error: "Failed to change password" }, { status: 500 });

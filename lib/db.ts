@@ -1,6 +1,8 @@
 import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
+import bcrypt from "bcryptjs";
+
 
 const DB_DIR = path.join(process.cwd(), "data");
 const DB_PATH = path.join(DB_DIR, "coredesk.db");
@@ -100,6 +102,18 @@ db.exec(`
     UPDATE leads SET status = 'Positive' WHERE status = 'Pos';
     UPDATE leads SET status = 'Negative' WHERE status = 'Neg';
   `);
+
+  // Seed default admin if database is empty (production bootstrapping)
+  const userCount = db.prepare("SELECT COUNT(*) as count FROM users").get() as { count: number };
+  if (userCount.count === 0) {
+    const defaultPassword = "adminpassword123";
+    const passwordHash = bcrypt.hashSync(defaultPassword, 12);
+    db.prepare(`
+      INSERT INTO users (first_name, last_name, email, phone, password_hash, dept, requires_password_change, blocked, approved)
+      VALUES (?, ?, ?, ?, ?, 'Management', 1, 0, 1)
+    `).run("CoreDesk", "Manager", "coredesk.mng@coredesk.com", "—", passwordHash);
+    console.log("Database seeded with default admin user: coredesk.mng@coredesk.com / adminpassword123");
+  }
 
   export default db;
   
