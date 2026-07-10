@@ -74,11 +74,16 @@ jobs:
         working-directory: ./terraform
 
       - name: Set up SSH Private Key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.VM_SSH_PRIVATE_KEY }}
         run: |
+          echo "Waiting for VM to fully boot and open SSH port..."
+          sleep 15
           mkdir -p ~/.ssh
-          echo "${{ secrets.VM_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ steps.tf-ip.outputs.vm_ip }} >> ~/.ssh/known_hosts
+
 
       - name: Copy docker-compose.yml to VM
         run: |
