@@ -103,6 +103,7 @@ jobs:
           ssh -o StrictHostKeyChecking=no debian@${{ steps.tf-ip.outputs.vm_ip }} "
             set -e
             echo 'DOCKER_IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/coredesk:latest' > .env
+            echo 'JWT_SECRET=${{ secrets.JWT_SECRET }}' >> .env
             # Pull new image
             sudo docker compose pull
             # Start/update the container

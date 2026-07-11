@@ -10,6 +10,7 @@ services:
     restart: always
     environment:
       - NODE_ENV=production
+      - JWT_SECRET
 
 volumes:
   coredesk-data:
