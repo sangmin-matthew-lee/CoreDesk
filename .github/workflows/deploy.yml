@@ -101,7 +101,8 @@ jobs:
       - name: Deploy to VM via SSH
         run: |
           ssh -o StrictHostKeyChecking=no debian@${{ steps.tf-ip.outputs.vm_ip }} "
-            export DOCKER_IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/coredesk:latest
+            set -e
+            echo 'DOCKER_IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/coredesk:latest' > .env
             # Pull new image
             sudo docker compose pull
             # Start/update the container
