@@ -119,8 +119,8 @@ jobs:
             # Bootstrap SSL certificates using standalone Certbot if not present
             if [ ! -d \"certbot/conf/live/\$DOMAIN_NAME\" ]; then
               echo \"SSL Certificates not found for \$DOMAIN_NAME. Bootstrapping via Certbot...\"
-              # Ensure port 80 is not bound
-              sudo docker compose stop nginx || true
+              # Stop any running containers (like the old web container on port 80) to free the port
+              sudo docker compose down || true
               # Run temporary standalone certbot to get certs
               sudo docker run --rm \
                 -p 80:80 \
