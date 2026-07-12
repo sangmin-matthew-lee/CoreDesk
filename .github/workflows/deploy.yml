@@ -94,19 +94,48 @@ jobs:
             sleep 5
           done
 
-      - name: Copy docker-compose.yml to VM
+      - name: Copy deployment files to VM
         run: |
+          # Copy docker-compose.yml
           scp -o StrictHostKeyChecking=no ./docker-compose.yml debian@${{ steps.tf-ip.outputs.vm_ip }}:~/docker-compose.yml
+          # Create nginx templates directory on VM
+          ssh -o StrictHostKeyChecking=no debian@${{ steps.tf-ip.outputs.vm_ip }} "mkdir -p ~/nginx/templates"
+          # Copy nginx templates to VM
+          scp -o StrictHostKeyChecking=no -r ./nginx/templates/* debian@${{ steps.tf-ip.outputs.vm_ip }}:~/nginx/templates/
 
       - name: Deploy to VM via SSH
         run: |
           ssh -o StrictHostKeyChecking=no debian@${{ steps.tf-ip.outputs.vm_ip }} "
             set -e
+            
+            # Setup environment variables
+            export DOMAIN_NAME='${{ secrets.DOMAIN_NAME }}'
+            export LETSENCRYPT_EMAIL='${{ secrets.LETSENCRYPT_EMAIL }}'
+            
             echo 'DOCKER_IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/coredesk:latest' > .env
             echo 'JWT_SECRET=${{ secrets.JWT_SECRET }}' >> .env
+            echo \"DOMAIN_NAME=\$DOMAIN_NAME\" >> .env
+            
+            # Bootstrap SSL certificates using standalone Certbot if not present
+            if [ ! -d \"certbot/conf/live/\$DOMAIN_NAME\" ]; then
+              echo \"SSL Certificates not found for \$DOMAIN_NAME. Bootstrapping via Certbot...\"
+              # Ensure port 80 is not bound
+              sudo docker compose stop nginx || true
+              # Run temporary standalone certbot to get certs
+              sudo docker run --rm \
+                -p 80:80 \
+                -v \$(pwd)/certbot/conf:/etc/letsencrypt \
+                -v \$(pwd)/certbot/www:/var/www/certbot \
+                certbot/certbot certonly --standalone \
+                --preferred-challenges http \
+                --email \$LETSENCRYPT_EMAIL \
+                --agree-tos --no-eff-email \
+                -d \$DOMAIN_NAME
+            fi
+            
             # Pull new image
             sudo docker compose pull
-            # Start/update the container
+            # Start/update the containers
             sudo docker compose up -d --remove-orphans
             # Prune old unused images to save disk space on e2-micro
             sudo docker image prune -f

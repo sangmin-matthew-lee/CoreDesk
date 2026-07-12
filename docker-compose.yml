@@ -3,14 +3,37 @@ version: '3.8'
 services:
   web:
     image: ${DOCKER_IMAGE_NAME:-coredesk:latest}
-    ports:
-      - "80:3000"
+    expose:
+      - "3000"
     volumes:
       - coredesk-data:/app/data
     restart: always
     environment:
       - NODE_ENV=production
       - JWT_SECRET
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - ./certbot/conf:/etc/letsencrypt:ro
+      - ./certbot/www:/var/www/certbot:ro
+    environment:
+      - DOMAIN_NAME
+      - NGINX_ENVSUBST_FILTER=DOMAIN_NAME
+    restart: always
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
 
 volumes:
   coredesk-data:

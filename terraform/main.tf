@@ -44,25 +44,25 @@ resource "google_compute_address" "static_ip" {
   region = var.gcp_region
 }
 
-# Allow HTTP and SSH traffic
+# Allow HTTP, HTTPS, and SSH traffic
 resource "google_compute_firewall" "allow_http_ssh" {
   name    = "${var.vm_name}-firewall"
   network = "default"
 
   allow {
     protocol = "tcp"
-    ports    = ["22", "80"]
+    ports    = ["22", "80", "443"]
   }
 
   source_ranges = ["0.0.0.0/0"]
-  target_tags   = ["http-server", "ssh-server"]
+  target_tags   = ["http-server", "https-server", "ssh-server"]
 }
 
 # Compute Engine Instance (e2-micro)
 resource "google_compute_instance" "vm_instance" {
   name         = var.vm_name
   machine_type = "e2-micro" # 1GB RAM, Free Tier eligible
-  tags         = ["http-server", "ssh-server"]
+  tags         = ["http-server", "https-server", "ssh-server"]
 
   boot_disk {
     initialize_params {
@@ -80,9 +80,18 @@ resource "google_compute_instance" "vm_instance" {
   }
 
   metadata = {
-    # Install Docker and Docker Compose on startup
+    # Install Docker and Docker Compose on startup, and set up Swap
     startup-script = <<-EOT
       #!/bin/bash
+      # Enable Swap Space (2GB)
+      if [ ! -f /swapfile ]; then
+        fallocate -l 2G /swapfile
+        chmod 600 /swapfile
+        mkswap /swapfile
+        swapon /swapfile
+        echo '/swapfile none swap sw 0 0' >> /etc/fstab
+      fi
+
       apt-get update
       apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release
       
