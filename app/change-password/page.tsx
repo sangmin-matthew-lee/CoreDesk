@@ -30,7 +30,7 @@ export default async function ChangePasswordPage() {
           <svg className="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M3 12h18M3 17h18" />
           </svg>
-          CoreDesk
+          GEI CRM
         </div>
         <p className="text-sm text-gray-500 mt-1">Internal operations platform</p>
       </div>

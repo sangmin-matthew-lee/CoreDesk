@@ -5,7 +5,7 @@ import "./globals.css";
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist" });
 
 export const metadata: Metadata = {
-  title: "CoreDesk",
+  title: "GEI CRM",
   description: "Internal tools for project management and sales",
 };
 

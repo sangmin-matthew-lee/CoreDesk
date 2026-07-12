@@ -28,7 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 7h18M3 12h18M3 17h18" />
             </svg>
-            CoreDesk
+            GEI CRM
           </Link>
 
           <nav className="flex items-center gap-1 flex-1">

@@ -23,7 +23,7 @@ export async function sendPasswordResetEmail(
   if (!transporter) {
     // Dev mode — print to console instead of sending email
     console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log("[CoreDesk] Password Reset (dev mode — no SMTP configured)");
+    console.log("[GEI CRM] Password Reset (dev mode — no SMTP configured)");
     console.log(`  To: ${email}`);
     console.log(`  Link: ${resetUrl}`);
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
@@ -31,12 +31,12 @@ export async function sendPasswordResetEmail(
   }
 
   await transporter.sendMail({
-    from: process.env.SMTP_FROM || "CoreDesk <noreply@coredesk.com>",
+    from: process.env.SMTP_FROM || "GEI CRM <noreply@geicrm.com>",
     to: email,
-    subject: "Reset your CoreDesk password",
+    subject: "Reset your GEI CRM password",
     html: `
       <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
-        <h2 style="color: #4f46e5;">CoreDesk</h2>
+        <h2 style="color: #4f46e5;">GEI CRM</h2>
         <p>Hi ${firstName},</p>
         <p>We received a request to reset your password. Click the button below to set a new password. This link expires in <strong>1 hour</strong>.</p>
         <a href="${resetUrl}" style="display:inline-block;margin:20px 0;padding:12px 24px;background:#4f46e5;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">
@@ -59,7 +59,7 @@ export async function sendWelcomeEmail(
   if (!transporter) {
     // Dev mode — print to console instead of sending email
     console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log("[CoreDesk] Welcome / Temp Password (dev mode — no SMTP configured)");
+    console.log("[GEI CRM] Welcome / Temp Password (dev mode — no SMTP configured)");
     console.log(`  To: ${email}`);
     console.log(`  Temp Password: ${tempPass}`);
     console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
@@ -67,14 +67,14 @@ export async function sendWelcomeEmail(
   }
 
   await transporter.sendMail({
-    from: process.env.SMTP_FROM || "CoreDesk <noreply@coredesk.com>",
+    from: process.env.SMTP_FROM || "GEI CRM <noreply@geicrm.com>",
     to: email,
-    subject: "Welcome to CoreDesk - Your temporary login details",
+    subject: "Welcome to GEI CRM - Your temporary login details",
     html: `
       <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
-        <h2 style="color: #4f46e5;">Welcome to CoreDesk</h2>
+        <h2 style="color: #4f46e5;">Welcome to GEI CRM</h2>
         <p>Hi ${firstName},</p>
-        <p>An account has been created for you on CoreDesk. Here are your login details:</p>
+        <p>An account has been created for you on GEI CRM. Here are your login details:</p>
         <p><strong>Email:</strong> ${email}</p>
         <p><strong>Temporary Password:</strong> ${tempPass}</p>
         <p>Upon your first sign in, you will be prompted to change this temporary password to one of your choice.</p>
