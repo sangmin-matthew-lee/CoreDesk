@@ -117,20 +117,21 @@ jobs:
             echo \"DOMAIN_NAME=\$DOMAIN_NAME\" >> .env
             
             # Bootstrap SSL certificates using standalone Certbot if not present
-            if [ ! -d \"certbot/conf/live/\$DOMAIN_NAME\" ]; then
-              echo \"SSL Certificates not found for \$DOMAIN_NAME. Bootstrapping via Certbot...\"
+            if ! sudo test -d "certbot/conf/live/$DOMAIN_NAME"; then
+              echo "SSL Certificates not found for $DOMAIN_NAME. Bootstrapping via Certbot..."
               # Stop any running containers (like the old web container on port 80) to free the port
               sudo docker compose down || true
               # Run temporary standalone certbot to get certs
               sudo docker run --rm \
                 -p 80:80 \
-                -v \$(pwd)/certbot/conf:/etc/letsencrypt \
-                -v \$(pwd)/certbot/www:/var/www/certbot \
+                -v $(pwd)/certbot/conf:/etc/letsencrypt \
+                -v $(pwd)/certbot/www:/var/www/certbot \
                 certbot/certbot certonly --standalone \
                 --preferred-challenges http \
-                --email \$LETSENCRYPT_EMAIL \
+                --email $LETSENCRYPT_EMAIL \
                 --agree-tos --no-eff-email \
-                -d \$DOMAIN_NAME
+                -d $DOMAIN_NAME \
+                --keep-until-expiring -n
             fi
             
             # Pull new image
