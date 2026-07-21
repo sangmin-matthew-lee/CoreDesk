@@ -38,7 +38,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             >
               Sales CRM
             </Link>
-            {user.dept === "Management" && (
+            {(user.dept === "Management" || user.dept === "Super Admin") && (
               <Link
                 href="/accounts"
                 className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
@@ -64,7 +64,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </div>
             <span
               className={`hidden sm:inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${
-                user.dept === "Management"
+                user.dept === "Super Admin"
+                  ? "bg-amber-100 text-amber-800"
+                  : user.dept === "Management"
                   ? "bg-purple-100 text-purple-700"
                   : "bg-blue-100 text-blue-700"
               }`}

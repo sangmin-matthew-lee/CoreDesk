@@ -32,7 +32,7 @@ function LoginForm() {
         setError(data.error || "Login failed");
         return;
       }
-      const defaultDest = data.dept === "Management" ? "/accounts" : "/sales";
+      const defaultDest = (data.dept === "Management" || data.dept === "Super Admin") ? "/accounts" : "/sales";
       const dest = (from && from !== "/") ? from : defaultDest;
       router.push(dest);
       router.refresh();

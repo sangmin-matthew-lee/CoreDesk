@@ -23,7 +23,7 @@ export async function GET() {
   if (!currentUser) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  if (currentUser.dept !== "Management") {
+  if (currentUser.dept !== "Management" && currentUser.dept !== "Super Admin") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     if (!currentUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    if (currentUser.dept !== "Management") {
+    if (currentUser.dept !== "Management" && currentUser.dept !== "Super Admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -54,8 +54,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
     }
 
-    if (!["Sales", "Management"].includes(dept)) {
-      return NextResponse.json({ error: "Invalid department" }, { status: 400 });
+    if (!["Sales", "Management", "Super Admin"].includes(dept)) {
+      return NextResponse.json({ error: "Invalid department/role" }, { status: 400 });
+    }
+
+    // Role creation restrictions:
+    // Management level admins can ONLY create Sales accounts.
+    // Super Admins can create Sales, Management, or Super Admin accounts.
+    if (currentUser.dept === "Management" && dept !== "Sales") {
+      return NextResponse.json(
+        { error: "Management level admins can only create Sales accounts. Super Admin approval required for admin roles." },
+        { status: 403 }
+      );
     }
 
     const existing = db

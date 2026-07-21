@@ -10,7 +10,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     if (!currentUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    if (currentUser.dept !== "Management") {
+    if (currentUser.dept !== "Management" && currentUser.dept !== "Super Admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -19,12 +19,12 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     if (userId === currentUser.userId) {
       return NextResponse.json(
-        { error: "You cannot block your own account" },
+        { error: "You cannot block or modify your own account" },
         { status: 400 }
       );
     }
 
-    // Check if user to modify exists and is NOT management
+    // Check target user permissions
     const targetUser = db
       .prepare("SELECT id, dept FROM users WHERE id = ?")
       .get(userId) as { id: number; dept: string } | undefined;
@@ -33,9 +33,16 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    if (targetUser.dept === "Management") {
+    if (targetUser.dept === "Super Admin" && currentUser.dept !== "Super Admin") {
       return NextResponse.json(
-        { error: "Cannot modify or block Management level accounts" },
+        { error: "Cannot modify Super Admin accounts" },
+        { status: 403 }
+      );
+    }
+
+    if (targetUser.dept === "Management" && currentUser.dept === "Management") {
+      return NextResponse.json(
+        { error: "Management level admins cannot modify Management accounts" },
         { status: 403 }
       );
     }
@@ -71,7 +78,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
     if (!currentUser) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    if (currentUser.dept !== "Management") {
+    if (currentUser.dept !== "Management" && currentUser.dept !== "Super Admin") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
@@ -85,7 +92,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       );
     }
 
-    // Check if user to delete exists and is NOT management
+    // Check target user permissions
     const targetUser = db
       .prepare("SELECT id, dept FROM users WHERE id = ?")
       .get(userId) as { id: number; dept: string } | undefined;
@@ -94,9 +101,16 @@ export async function DELETE(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    if (targetUser.dept === "Management") {
+    if (targetUser.dept === "Super Admin" && currentUser.dept !== "Super Admin") {
       return NextResponse.json(
-        { error: "Cannot delete Management level accounts" },
+        { error: "Cannot delete Super Admin accounts" },
+        { status: 403 }
+      );
+    }
+
+    if (targetUser.dept === "Management" && currentUser.dept === "Management") {
+      return NextResponse.json(
+        { error: "Management level admins cannot delete Management accounts" },
         { status: 403 }
       );
     }

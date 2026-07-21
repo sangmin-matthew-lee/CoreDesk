@@ -22,7 +22,7 @@ export async function GET() {
     `;
 
     let leads;
-    if (user.dept === "Management") {
+    if (user.dept === "Management" || user.dept === "Super Admin") {
       leads = db.prepare(`${baseSelect} ORDER BY l.updated_at DESC`).all();
     } else {
       leads = db
@@ -52,9 +52,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
-    // Sales users can only create leads assigned to themselves
+    // Management / Super Admin users can assign leads to anyone
     const assignedTo =
-      user.dept === "Management" && assigned_to
+      (user.dept === "Management" || user.dept === "Super Admin") && assigned_to
         ? assigned_to
         : user.userId;
 

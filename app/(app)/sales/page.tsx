@@ -59,7 +59,7 @@ export default function SalesPage() {
   useEffect(() => {
     fetch("/api/auth/me")
       .then((r) => r.json())
-      .then((u) => setIsManagement(u.dept === "Management"));
+      .then((u) => setIsManagement(u.dept === "Management" || u.dept === "Super Admin"));
   }, []);
 
   const searchFields = isManagement

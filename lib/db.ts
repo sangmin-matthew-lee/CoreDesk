@@ -103,7 +103,10 @@ db.exec(`
     UPDATE leads SET status = 'Negative' WHERE status = 'Neg';
   `);
 
-  // Seed default admin if database is empty (production bootstrapping)
+  // Migration: Upgrade initial bootstrapped manager to Super Admin
+  db.exec(`UPDATE users SET dept = 'Super Admin' WHERE email = 'coredesk.mng@coredesk.com' AND dept = 'Management';`);
+
+  // Seed default super admin if database is empty (production bootstrapping)
   // Skip during next build phase to prevent multi-worker race conditions
   if (process.env.NEXT_PHASE !== "phase-production-build") {
     const userCount = db.prepare("SELECT COUNT(*) as count FROM users").get() as { count: number };
@@ -112,9 +115,9 @@ db.exec(`
       const passwordHash = bcrypt.hashSync(defaultPassword, 12);
       db.prepare(`
         INSERT OR IGNORE INTO users (first_name, last_name, email, phone, password_hash, dept, requires_password_change, blocked, approved)
-        VALUES (?, ?, ?, ?, ?, 'Management', 1, 0, 1)
-      `).run("CoreDesk", "Manager", "coredesk.mng@coredesk.com", "—", passwordHash);
-      console.log("Database seeded with default admin user: coredesk.mng@coredesk.com / adminpassword123");
+        VALUES (?, ?, ?, ?, ?, 'Super Admin', 1, 0, 1)
+      `).run("GEI", "SuperAdmin", "coredesk.mng@coredesk.com", "—", passwordHash);
+      console.log("Database seeded with default super admin user: coredesk.mng@coredesk.com / adminpassword123");
     }
   }
 

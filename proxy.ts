@@ -21,7 +21,7 @@ export async function proxy(request: NextRequest) {
   // Redirect authenticated users away from auth pages
   if (isAuthPage) {
     if (user) {
-      const dest = user.dept === "Management" ? "/accounts" : "/sales";
+      const dest = (user.dept === "Management" || user.dept === "Super Admin") ? "/accounts" : "/sales";
       return NextResponse.redirect(new URL(dest, request.url));
     }
     return NextResponse.next();

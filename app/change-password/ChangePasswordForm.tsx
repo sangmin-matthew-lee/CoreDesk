@@ -40,7 +40,7 @@ export default function ChangePasswordForm() {
         return;
       }
 
-      router.push(data.dept === "Management" ? "/accounts" : "/sales");
+      router.push((data.dept === "Management" || data.dept === "Super Admin") ? "/accounts" : "/sales");
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");

@@ -9,7 +9,7 @@ interface UserAccount {
   last_name: string;
   email: string;
   phone?: string | null;
-  dept: "Sales" | "Management";
+  dept: "Sales" | "Management" | "Super Admin";
   blocked: number;
   approved: number;
   requires_password_change: number;
@@ -27,7 +27,7 @@ export default function AccountsPage() {
     firstName: "",
     lastName: "",
     email: "",
-    dept: "Sales" as "Sales" | "Management",
+    dept: "Sales" as "Sales" | "Management" | "Super Admin",
   });
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState<{
@@ -110,8 +110,15 @@ export default function AccountsPage() {
     }
   };
 
+  const canManageUser = (user: UserAccount) => {
+    if (user.id === currentUser?.userId) return false;
+    if (user.dept === "Super Admin") return currentUser?.dept === "Super Admin";
+    if (user.dept === "Management") return currentUser?.dept === "Super Admin";
+    return currentUser?.dept === "Management" || currentUser?.dept === "Super Admin";
+  };
+
   const handleToggleBlock = async (user: UserAccount) => {
-    if (user.dept === "Management") return;
+    if (!canManageUser(user)) return;
     const shouldBlock = user.blocked === 0;
 
     try {
@@ -134,7 +141,7 @@ export default function AccountsPage() {
   };
 
   const handleDeleteUser = async (user: UserAccount) => {
-    if (user.dept === "Management") return;
+    if (!canManageUser(user)) return;
     if (!confirm(`Are you sure you want to delete ${user.first_name} ${user.last_name}'s account? This action cannot be undone.`)) {
       return;
     }
@@ -329,14 +336,24 @@ export default function AccountsPage() {
               <tbody className="divide-y divide-gray-100">
                 {approvedUsers.map((acc) => {
                   const isSelf = acc.id === currentUser?.userId;
+                  const isSuperAdmin = acc.dept === "Super Admin";
                   const isMgmt = acc.dept === "Management";
+
+                  const isProtected =
+                    isSelf ||
+                    (isSuperAdmin && currentUser?.dept !== "Super Admin") ||
+                    (isMgmt && currentUser?.dept !== "Super Admin");
 
                   return (
                     <tr key={acc.id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-4 py-3 whitespace-nowrap">
                         <div className="flex items-center gap-2.5">
                           <span className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
-                            isMgmt ? "bg-purple-100 text-purple-700" : "bg-indigo-100 text-indigo-700"
+                            isSuperAdmin
+                              ? "bg-amber-100 text-amber-800"
+                              : isMgmt
+                              ? "bg-purple-100 text-purple-700"
+                              : "bg-indigo-100 text-indigo-700"
                           }`}>
                             {acc.first_name.charAt(0).toUpperCase()}
                           </span>
@@ -358,7 +375,11 @@ export default function AccountsPage() {
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          isMgmt ? "bg-purple-100 text-purple-700" : "bg-blue-100 text-blue-700"
+                          isSuperAdmin
+                            ? "bg-amber-100 text-amber-800"
+                            : isMgmt
+                            ? "bg-purple-100 text-purple-700"
+                            : "bg-blue-100 text-blue-700"
                         }`}>
                           {acc.dept}
                         </span>
@@ -386,7 +407,7 @@ export default function AccountsPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right">
-                        {isMgmt ? (
+                        {isProtected ? (
                           <span className="text-xs text-gray-400 italic">Protected</span>
                         ) : (
                           <div className="inline-flex items-center gap-2">
@@ -545,14 +566,30 @@ export default function AccountsPage() {
 
             <div className="space-y-1">
               <label className="block text-xs font-semibold text-gray-700">Role / Department</label>
-              <select
-                value={form.dept}
-                onChange={(e) => setForm((p) => ({ ...p, dept: e.target.value as "Sales" | "Management" }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="Sales">Sales (CRM access only)</option>
-                <option value="Management">Management (Full access)</option>
-              </select>
+              {currentUser?.dept === "Super Admin" ? (
+                <select
+                  value={form.dept}
+                  onChange={(e) => setForm((p) => ({ ...p, dept: e.target.value as "Sales" | "Management" | "Super Admin" }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                  <option value="Sales">Sales (CRM access only)</option>
+                  <option value="Management">Management (Management Level Admin)</option>
+                  <option value="Super Admin">Super Admin (Full Access & Admin Creation)</option>
+                </select>
+              ) : (
+                <div>
+                  <select
+                    disabled
+                    value="Sales"
+                    className="w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-lg text-sm text-gray-500 cursor-not-allowed"
+                  >
+                    <option value="Sales">Sales (CRM access only)</option>
+                  </select>
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    Note: Management level admins can only register Sales accounts. Super Admin access is required to create Management level accounts.
+                  </p>
+                </div>
+              )}
             </div>
 
             <button

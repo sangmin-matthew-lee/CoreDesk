@@ -19,7 +19,7 @@ function canAccessLead(
   userId: number,
   dept: string
 ): boolean {
-  if (dept === "Management") return true;
+  if (dept === "Management" || dept === "Super Admin") return true;
   return lead.assigned_to === userId;
 }
 
@@ -78,9 +78,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
       office_address, status, last_contact_date, checklist, assigned_to,
     } = body;
 
-    // Only Management can reassign leads
+    // Only Management / Super Admin can reassign leads
     const newAssignedTo =
-      user.dept === "Management" && assigned_to !== undefined
+      (user.dept === "Management" || user.dept === "Super Admin") && assigned_to !== undefined
         ? assigned_to
         : existing.assigned_to;
 

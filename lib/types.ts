@@ -1,5 +1,6 @@
 export type LeadStatus = "Cold" | "Positive" | "Negative" | "Closed";
-export type Dept = "Sales" | "Management";
+export type Dept = "Sales" | "Management" | "Super Admin";
+
 
 export const CHECKLIST_ITEMS: { key: string; label: string }[] = [
   { key: "mot_meeting", label: "MOT Meeting" },
