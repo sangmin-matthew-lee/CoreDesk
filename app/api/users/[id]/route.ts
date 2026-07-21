@@ -65,6 +65,20 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       db.prepare("UPDATE users SET approved = ? WHERE id = ?").run(approved ? 1 : 0, userId);
     }
 
+    if ("dept" in body) {
+      const { dept } = body;
+      if (!["Sales", "Management", "Super Admin"].includes(dept)) {
+        return NextResponse.json({ error: "Invalid department/role" }, { status: 400 });
+      }
+      if (currentUser.dept !== "Super Admin") {
+        return NextResponse.json(
+          { error: "Only Super Admin can change account roles or promote users" },
+          { status: 403 }
+        );
+      }
+      db.prepare("UPDATE users SET dept = ? WHERE id = ?").run(dept, userId);
+    }
+
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Failed to update user block status:", error);

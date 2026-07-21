@@ -205,6 +205,31 @@ export default function AccountsPage() {
     }
   };
 
+  const handleRoleChange = async (user: UserAccount, newDept: "Sales" | "Management" | "Super Admin") => {
+    if (user.dept === newDept) return;
+    if (!confirm(`Are you sure you want to change ${user.first_name} ${user.last_name}'s role from "${user.dept}" to "${newDept}"?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dept: newDept }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Failed to update user role");
+        return;
+      }
+
+      fetchUsers();
+    } catch {
+      alert("Something went wrong updating user role");
+    }
+  };
+
   const copyCredentials = () => {
     if (!formSuccess) return;
     const text = `CoreDesk Login Details\nEmail: ${formSuccess.email}\nTemporary Password: ${formSuccess.tempPass}`;
@@ -374,15 +399,33 @@ export default function AccountsPage() {
                         {acc.phone || "—"}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                          isSuperAdmin
-                            ? "bg-amber-100 text-amber-800"
-                            : isMgmt
-                            ? "bg-purple-100 text-purple-700"
-                            : "bg-blue-100 text-blue-700"
-                        }`}>
-                          {acc.dept}
-                        </span>
+                        {currentUser?.dept === "Super Admin" && !isSelf ? (
+                          <select
+                            value={acc.dept}
+                            onChange={(e) => handleRoleChange(acc, e.target.value as "Sales" | "Management" | "Super Admin")}
+                            className={`px-2 py-1 rounded-md text-xs font-semibold border focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer shadow-sm transition-colors ${
+                              isSuperAdmin
+                                ? "bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100"
+                                : isMgmt
+                                ? "bg-purple-50 text-purple-900 border-purple-300 hover:bg-purple-100"
+                                : "bg-blue-50 text-blue-900 border-blue-300 hover:bg-blue-100"
+                            }`}
+                          >
+                            <option value="Sales">Sales</option>
+                            <option value="Management">Management</option>
+                            <option value="Super Admin">Super Admin</option>
+                          </select>
+                        ) : (
+                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                            isSuperAdmin
+                              ? "bg-amber-100 text-amber-800"
+                              : isMgmt
+                              ? "bg-purple-100 text-purple-700"
+                              : "bg-blue-100 text-blue-700"
+                          }`}>
+                            {acc.dept}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         {acc.blocked === 1 ? (
