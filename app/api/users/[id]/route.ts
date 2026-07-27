@@ -16,12 +16,17 @@ export async function PATCH(req: NextRequest, { params }: Params) {
 
     const { id } = await params;
     const userId = parseInt(id);
+    const isSelf = userId === currentUser.userId;
 
-    if (userId === currentUser.userId) {
-      return NextResponse.json(
-        { error: "You cannot block or modify your own account" },
-        { status: 400 }
-      );
+    const body = await req.json();
+
+    if (isSelf) {
+      if ("blocked" in body || "approved" in body || "dept" in body) {
+        return NextResponse.json(
+          { error: "You cannot change your own role, block status, or approval status" },
+          { status: 400 }
+        );
+      }
     }
 
     // Check target user permissions
@@ -33,21 +38,55 @@ export async function PATCH(req: NextRequest, { params }: Params) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    if (targetUser.dept === "Super Admin" && currentUser.dept !== "Super Admin") {
-      return NextResponse.json(
-        { error: "Cannot modify Super Admin accounts" },
-        { status: 403 }
-      );
+    if (!isSelf) {
+      if (targetUser.dept === "Super Admin" && currentUser.dept !== "Super Admin") {
+        return NextResponse.json(
+          { error: "Cannot modify Super Admin accounts" },
+          { status: 403 }
+        );
+      }
+
+      if (targetUser.dept === "Management" && currentUser.dept === "Management") {
+        return NextResponse.json(
+          { error: "Management level admins cannot modify other Management accounts" },
+          { status: 403 }
+        );
+      }
     }
 
-    if (targetUser.dept === "Management" && currentUser.dept === "Management") {
-      return NextResponse.json(
-        { error: "Management level admins cannot modify Management accounts" },
-        { status: 403 }
-      );
+    if ("firstName" in body || "first_name" in body) {
+      const val = body.firstName ?? body.first_name;
+      if (typeof val === "string" && val.trim() !== "") {
+        db.prepare("UPDATE users SET first_name = ? WHERE id = ?").run(val.trim(), userId);
+      }
     }
 
-    const body = await req.json();
+    if ("lastName" in body || "last_name" in body) {
+      const val = body.lastName ?? body.last_name;
+      if (typeof val === "string" && val.trim() !== "") {
+        db.prepare("UPDATE users SET last_name = ? WHERE id = ?").run(val.trim(), userId);
+      }
+    }
+
+    if ("email" in body) {
+      const val = body.email;
+      if (typeof val === "string" && val.trim() !== "") {
+        const existing = db
+          .prepare("SELECT id FROM users WHERE email = ? AND id != ?")
+          .get(val.toLowerCase().trim(), userId);
+        if (existing) {
+          return NextResponse.json({ error: "Email already in use" }, { status: 409 });
+        }
+        db.prepare("UPDATE users SET email = ? WHERE id = ?").run(val.toLowerCase().trim(), userId);
+      }
+    }
+
+    if ("phone" in body) {
+      const val = body.phone;
+      if (typeof val === "string") {
+        db.prepare("UPDATE users SET phone = ? WHERE id = ?").run(val.trim(), userId);
+      }
+    }
 
     if ("blocked" in body) {
       const { blocked } = body;

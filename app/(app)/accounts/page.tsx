@@ -36,6 +36,15 @@ export default function AccountsPage() {
   } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
+  // Inline edit state
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+  });
+
   const approvedUsers = users.filter((u) => u.approved !== 0);
   const pendingUsers = users.filter((u) => u.approved === 0);
 
@@ -230,6 +239,41 @@ export default function AccountsPage() {
     }
   };
 
+  const startEditing = (user: UserAccount) => {
+    setEditingUserId(user.id);
+    setEditForm({
+      firstName: user.first_name,
+      lastName: user.last_name,
+      email: user.email,
+      phone: user.phone || "",
+    });
+  };
+
+  const handleSaveEdit = async (userId: number) => {
+    if (!editForm.firstName.trim() || !editForm.lastName.trim() || !editForm.email.trim()) {
+      alert("First name, Last name, and Email are required");
+      return;
+    }
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data.error || "Failed to save edits");
+        return;
+      }
+
+      setEditingUserId(null);
+      fetchUsers();
+    } catch {
+      alert("Something went wrong");
+    }
+  };
+
   const copyCredentials = () => {
     if (!formSuccess) return;
     const text = `CoreDesk Login Details\nEmail: ${formSuccess.email}\nTemporary Password: ${formSuccess.tempPass}`;
@@ -369,6 +413,8 @@ export default function AccountsPage() {
                     (isSuperAdmin && currentUser?.dept !== "Super Admin") ||
                     (isMgmt && currentUser?.dept !== "Super Admin");
 
+                  const isEditing = editingUserId === acc.id;
+
                   return (
                     <tr key={acc.id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-4 py-3 whitespace-nowrap">
@@ -382,21 +428,59 @@ export default function AccountsPage() {
                           }`}>
                             {acc.first_name.charAt(0).toUpperCase()}
                           </span>
-                          <div className="font-medium text-gray-900 flex items-center gap-1.5">
-                            {acc.first_name} {acc.last_name}
-                            {isSelf && (
-                              <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
-                                You
-                              </span>
-                            )}
-                          </div>
+                          {isEditing ? (
+                            <div className="flex gap-1">
+                              <input
+                                type="text"
+                                className="w-20 px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
+                                value={editForm.firstName}
+                                onChange={(e) => setEditForm(p => ({ ...p, firstName: e.target.value }))}
+                                placeholder="First"
+                              />
+                              <input
+                                type="text"
+                                className="w-20 px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
+                                value={editForm.lastName}
+                                onChange={(e) => setEditForm(p => ({ ...p, lastName: e.target.value }))}
+                                placeholder="Last"
+                              />
+                            </div>
+                          ) : (
+                            <div className="font-medium text-gray-900 flex items-center gap-1.5">
+                              {acc.first_name} {acc.last_name}
+                              {isSelf && (
+                                <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">
+                                  You
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-gray-600 font-mono text-xs">
-                        {acc.email}
+                        {isEditing ? (
+                          <input
+                            type="email"
+                            className="w-48 px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-indigo-500 outline-none font-mono"
+                            value={editForm.email}
+                            onChange={(e) => setEditForm(p => ({ ...p, email: e.target.value }))}
+                          />
+                        ) : (
+                          acc.email
+                        )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-gray-600">
-                        {acc.phone || "—"}
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            className="w-32 px-2 py-1 border border-gray-300 rounded text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
+                            value={editForm.phone}
+                            onChange={(e) => setEditForm(p => ({ ...p, phone: e.target.value }))}
+                            placeholder="Number"
+                          />
+                        ) : (
+                          acc.phone || "—"
+                        )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
                         {currentUser?.dept === "Super Admin" && !isSelf ? (
@@ -450,26 +534,54 @@ export default function AccountsPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap text-right">
-                        {isProtected ? (
-                          <span className="text-xs text-gray-400 italic">Protected</span>
-                        ) : (
+                        {isEditing ? (
                           <div className="inline-flex items-center gap-2">
                             <button
-                              onClick={() => handleToggleBlock(acc)}
-                              className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors ${
-                                acc.blocked === 1
-                                  ? "bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50"
-                                  : "bg-white text-amber-600 border-amber-200 hover:bg-amber-50"
-                              }`}
+                              onClick={() => handleSaveEdit(acc.id)}
+                              className="px-2.5 py-1 text-xs font-semibold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors shadow-sm"
                             >
-                              {acc.blocked === 1 ? "Unblock" : "Block"}
+                              Save
                             </button>
                             <button
-                              onClick={() => handleDeleteUser(acc)}
-                              className="px-2.5 py-1 text-xs font-semibold text-red-600 bg-white border border-red-200 rounded-md hover:bg-red-50 transition-colors"
+                              onClick={() => setEditingUserId(null)}
+                              className="px-2.5 py-1 text-xs font-semibold text-gray-600 bg-white border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
                             >
-                              Delete
+                              Cancel
                             </button>
+                          </div>
+                        ) : (
+                          <div className="inline-flex items-center gap-2">
+                            {(isSelf || !isProtected) && (
+                              <button
+                                onClick={() => startEditing(acc)}
+                                className="px-2.5 py-1 text-xs font-semibold text-indigo-600 bg-white border border-indigo-200 rounded-md hover:bg-indigo-50 transition-colors shadow-sm"
+                              >
+                                Edit
+                              </button>
+                            )}
+                            {!isSelf && !isProtected && (
+                              <>
+                                <button
+                                  onClick={() => handleToggleBlock(acc)}
+                                  className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-colors ${
+                                    acc.blocked === 1
+                                      ? "bg-white text-emerald-600 border-emerald-200 hover:bg-emerald-50"
+                                      : "bg-white text-amber-600 border-amber-200 hover:bg-amber-50"
+                                  }`}
+                                >
+                                  {acc.blocked === 1 ? "Unblock" : "Block"}
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteUser(acc)}
+                                  className="px-2.5 py-1 text-xs font-semibold text-red-600 bg-white border border-red-200 rounded-md hover:bg-red-50 transition-colors"
+                                >
+                                  Delete
+                                </button>
+                              </>
+                            )}
+                            {!isSelf && isProtected && (
+                              <span className="text-xs text-gray-400 italic">Protected</span>
+                            )}
                           </div>
                         )}
                       </td>

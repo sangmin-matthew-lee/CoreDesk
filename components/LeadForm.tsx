@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Lead, LeadStatus } from "@/lib/types";
+import { Lead, LeadStatus, LeadSite } from "@/lib/types";
 
 interface UserOption {
   id: number;
@@ -46,10 +46,19 @@ export default function LeadForm({
     status: "Cold",
     last_contact_date: "",
     assigned_to: null,
+    number_of_sites: null,
     ...initial,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const [sitesList, setSitesList] = useState<LeadSite[]>(() => {
+    try {
+      return initial.sites ? JSON.parse(initial.sites) : [];
+    } catch {
+      return [];
+    }
+  });
 
   const set =
     (field: keyof Lead) =>
@@ -62,7 +71,11 @@ export default function LeadForm({
     setLoading(true);
     setError("");
     try {
-      await onSubmit(form);
+      await onSubmit({
+        ...form,
+        sites: JSON.stringify(sitesList),
+        number_of_sites: form.number_of_sites ? Number(form.number_of_sites) : null,
+      });
     } catch {
       setError("Something went wrong. Please try again.");
       setLoading(false);
@@ -104,6 +117,21 @@ export default function LeadForm({
         <Field label="Office Address">
           <input className={inputCls} value={form.office_address || ""} onChange={set("office_address")} placeholder="123 Main St, City, State" />
         </Field>
+        <Field label="Number of Sites (학교 갯수)">
+          <input
+            className={inputCls}
+            type="number"
+            min="0"
+            value={form.number_of_sites ?? ""}
+            onChange={(e) =>
+              setForm((prev) => ({
+                ...prev,
+                number_of_sites: e.target.value ? Number(e.target.value) : null,
+              }))
+            }
+            placeholder="0"
+          />
+        </Field>
 
         {isManagement && salesUsers.length > 0 && (
           <Field label="Assign To">
@@ -125,6 +153,69 @@ export default function LeadForm({
               ))}
             </select>
           </Field>
+        )}
+      </div>
+
+      <div className="space-y-3 pt-4 border-t border-gray-200">
+        <div className="flex justify-between items-center">
+          <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Sites & Costs</h3>
+          <button
+            type="button"
+            onClick={() => setSitesList((prev) => [...prev, { name: "", cost: 0 }])}
+            className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
+          >
+            + Add Site
+          </button>
+        </div>
+
+        {sitesList.length === 0 ? (
+          <p className="text-xs text-gray-500 italic">No sites added yet. Click "+ Add Site" to add project sites and costs.</p>
+        ) : (
+          <div className="space-y-2">
+            {sitesList.map((site, index) => (
+              <div key={index} className="flex items-center gap-3">
+                <input
+                  type="text"
+                  required
+                  placeholder="Site Name / School Name"
+                  value={site.name}
+                  onChange={(e) => {
+                    const next = [...sitesList];
+                    next[index].name = e.target.value;
+                    setSitesList(next);
+                  }}
+                  className={`${inputCls} flex-1`}
+                />
+                <input
+                  type="number"
+                  required
+                  min="0"
+                  placeholder="Cost"
+                  value={site.cost || ""}
+                  onChange={(e) => {
+                    const next = [...sitesList];
+                    next[index].cost = Number(e.target.value);
+                    setSitesList(next);
+                  }}
+                  className={`${inputCls} w-32`}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSitesList((prev) => prev.filter((_, i) => i !== index));
+                  }}
+                  className="p-2 text-red-500 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            ))}
+            <div className="text-right text-xs font-semibold text-gray-600 pr-14 pt-1">
+              Total Project Cost: <span className="text-indigo-600 font-bold">${sitesList.reduce((sum, s) => sum + s.cost, 0).toLocaleString()}</span>
+            </div>
+          </div>
         )}
       </div>
 

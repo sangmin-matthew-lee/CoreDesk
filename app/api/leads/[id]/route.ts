@@ -76,6 +76,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
     const {
       name, email, phone, company, title, notes,
       office_address, status, last_contact_date, checklist, assigned_to,
+      sites, number_of_sites,
     } = body;
 
     // Only Management / Super Admin can reassign leads
@@ -84,12 +85,15 @@ export async function PUT(req: NextRequest, { params }: Params) {
         ? assigned_to
         : existing.assigned_to;
 
+    const sitesStr = sites ? JSON.stringify(sites) : null;
+    const numberOfSitesVal = typeof number_of_sites === "number" ? number_of_sites : null;
+
     db.prepare(
-      `UPDATE leads SET name=?, email=?, phone=?, company=?, title=?, notes=?, office_address=?, status=?, last_contact_date=?, assigned_to=?, updated_at=datetime('now') WHERE id=?`
+      `UPDATE leads SET name=?, email=?, phone=?, company=?, title=?, notes=?, office_address=?, status=?, last_contact_date=?, assigned_to=?, sites=?, number_of_sites=?, updated_at=datetime('now') WHERE id=?`
     ).run(
       name, email || "", phone || "", company || "", title || "",
       notes || "", office_address || "", status || "Cold",
-      last_contact_date || null, newAssignedTo, id
+      last_contact_date || null, newAssignedTo, sitesStr, numberOfSitesVal, id
     );
 
     if (checklist && typeof checklist === "object") {

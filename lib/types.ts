@@ -30,6 +30,11 @@ export interface User {
   created_at: string;
 }
 
+export interface LeadSite {
+  name: string;
+  cost: number;
+}
+
 export interface Lead {
   id: number;
   name: string;
@@ -45,6 +50,8 @@ export interface Lead {
   assigned_to_name?: string | null;
   checklist_completed?: number;
   latest_stage_key?: string | null;
+  sites?: string | null;
+  number_of_sites?: number | null;
   created_at: string;
   updated_at: string;
 }

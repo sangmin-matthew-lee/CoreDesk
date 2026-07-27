@@ -205,6 +205,7 @@ export default function SalesPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Name</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Company</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Title</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Project Cost</th>
                 {isManagement && (
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider whitespace-nowrap">Sales Rep</th>
                 )}
@@ -218,6 +219,16 @@ export default function SalesPage() {
                 const pct = Math.round((completed / CHECKLIST_TOTAL) * 100);
                 const stageLabel = getStageLabel(lead.latest_stage_key);
 
+                let projectCost = 0;
+                if (lead.sites) {
+                  try {
+                    const parsed = JSON.parse(lead.sites) as { name: string; cost: number }[];
+                    projectCost = parsed.reduce((sum, s) => sum + s.cost, 0);
+                  } catch {
+                    projectCost = 0;
+                  }
+                }
+
                 return (
                   <tr
                     key={lead.id}
@@ -230,6 +241,9 @@ export default function SalesPage() {
                     <td className="px-4 py-3 font-medium text-gray-900 whitespace-nowrap">{lead.name}</td>
                     <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{lead.company || "—"}</td>
                     <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{lead.title || "—"}</td>
+                    <td className="px-4 py-3 text-gray-900 font-semibold font-mono whitespace-nowrap">
+                      {projectCost > 0 ? `$${projectCost.toLocaleString()}` : "—"}
+                    </td>
                     {isManagement && (
                       <td className="px-4 py-3 whitespace-nowrap">
                         {lead.assigned_to_name ? (

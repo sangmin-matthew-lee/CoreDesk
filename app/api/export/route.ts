@@ -15,6 +15,16 @@ export async function GET() {
         .prepare(`SELECT item_key, completed FROM lead_checklist WHERE lead_id = ?`)
         .all(lead.id) as { item_key: string; completed: number }[];
 
+      let projectCost = 0;
+      if (lead.sites) {
+        try {
+          const parsed = JSON.parse(lead.sites as string) as { name: string; cost: number }[];
+          projectCost = parsed.reduce((sum, s) => sum + s.cost, 0);
+        } catch {
+          projectCost = 0;
+        }
+      }
+
       const row: Record<string, unknown> = {
         ID: lead.id,
         Name: lead.name,
@@ -22,6 +32,8 @@ export async function GET() {
         Phone: lead.phone,
         Company: lead.company,
         Title: lead.title,
+        "Total Project Cost": projectCost,
+        "Number of Sites": lead.number_of_sites || 0,
         "Office Address": lead.office_address,
         Status: lead.status,
         "Last Contact": lead.last_contact_date || "",

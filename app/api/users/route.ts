@@ -27,13 +27,16 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const users = db
-    .prepare(
-      `SELECT id, first_name, last_name, email, phone, dept, blocked, requires_password_change, approved, created_at 
+  const usersQuery = currentUser.dept === "Super Admin"
+    ? `SELECT id, first_name, last_name, email, phone, dept, blocked, requires_password_change, approved, created_at 
        FROM users 
        ORDER BY first_name`
-    )
-    .all();
+    : `SELECT id, first_name, last_name, email, phone, dept, blocked, requires_password_change, approved, created_at 
+       FROM users 
+       WHERE dept != 'Super Admin'
+       ORDER BY first_name`;
+
+  const users = db.prepare(usersQuery).all();
 
   return NextResponse.json(users);
 }

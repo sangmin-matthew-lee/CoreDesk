@@ -49,6 +49,8 @@ db.exec(`
       status TEXT NOT NULL DEFAULT 'Cold',
       last_contact_date TEXT,
       assigned_to INTEGER REFERENCES users(id),
+      sites TEXT,
+      number_of_sites INTEGER,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
@@ -93,6 +95,20 @@ db.exec(`
   // Migration: add approved column (default 1 for existing users)
   try {
     db.exec(`ALTER TABLE users ADD COLUMN approved INTEGER NOT NULL DEFAULT 1`);
+  } catch {
+    // Column already exists
+  }
+
+  // Migration: add sites column to leads table
+  try {
+    db.exec(`ALTER TABLE leads ADD COLUMN sites TEXT`);
+  } catch {
+    // Column already exists
+  }
+
+  // Migration: add number_of_sites column to leads table
+  try {
+    db.exec(`ALTER TABLE leads ADD COLUMN number_of_sites INTEGER`);
   } catch {
     // Column already exists
   }

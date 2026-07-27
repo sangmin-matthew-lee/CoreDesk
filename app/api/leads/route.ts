@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
     const {
       name, email, phone, company, title, notes,
       office_address, status, last_contact_date, assigned_to,
+      sites, number_of_sites,
     } = body;
 
     if (!name) {
@@ -58,10 +59,13 @@ export async function POST(req: NextRequest) {
         ? assigned_to
         : user.userId;
 
+    const sitesStr = sites ? JSON.stringify(sites) : null;
+    const numberOfSitesVal = typeof number_of_sites === "number" ? number_of_sites : null;
+
     const result = db
       .prepare(
-        `INSERT INTO leads (name, email, phone, company, title, notes, office_address, status, last_contact_date, assigned_to)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO leads (name, email, phone, company, title, notes, office_address, status, last_contact_date, assigned_to, sites, number_of_sites)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         name,
@@ -73,7 +77,9 @@ export async function POST(req: NextRequest) {
         office_address || "",
         status || "Cold",
         last_contact_date || null,
-        assignedTo
+        assignedTo,
+        sitesStr,
+        numberOfSitesVal
       );
 
     const leadId = result.lastInsertRowid;

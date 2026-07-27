@@ -216,10 +216,40 @@ export default function LeadDetailPage() {
                 label="Last Contact"
                 value={lead.last_contact_date ? new Date(lead.last_contact_date).toLocaleDateString() : null}
               />
+              <InfoRow label="Number of Sites" value={lead.number_of_sites !== null && lead.number_of_sites !== undefined ? lead.number_of_sites.toString() : null} />
               {isManagement && (
                 <InfoRow label="Assigned To" value={lead.assigned_to_name || "Unassigned"} />
               )}
             </dl>
+            {lead.sites && (
+              <div className="pt-3 border-t border-gray-100">
+                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Sites & Costs</p>
+                <div className="space-y-1.5 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                  {(() => {
+                    try {
+                      const list = JSON.parse(lead.sites) as { name: string; cost: number }[];
+                      if (list.length === 0) return <p className="text-xs text-gray-400 italic">No sites listed</p>;
+                      return (
+                        <>
+                          {list.map((site, i) => (
+                            <div key={i} className="flex justify-between items-center text-xs">
+                              <span className="text-gray-700 font-medium">{site.name}</span>
+                              <span className="text-gray-600 font-mono font-semibold">${site.cost.toLocaleString()}</span>
+                            </div>
+                          ))}
+                          <div className="flex justify-between items-center text-xs font-bold pt-1.5 border-t border-dashed border-gray-200">
+                            <span className="text-gray-800">Total Cost</span>
+                            <span className="text-indigo-600 font-bold">${list.reduce((sum, s) => sum + s.cost, 0).toLocaleString()}</span>
+                          </div>
+                        </>
+                      );
+                    } catch {
+                      return <p className="text-xs text-red-500 italic">Invalid site data</p>;
+                    }
+                  })()}
+                </div>
+              </div>
+            )}
             {lead.notes && (
               <div className="pt-2 border-t border-gray-100">
                 <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">Notes</p>
