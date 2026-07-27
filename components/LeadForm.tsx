@@ -117,7 +117,7 @@ export default function LeadForm({
         <Field label="Office Address">
           <input className={inputCls} value={form.office_address || ""} onChange={set("office_address")} placeholder="123 Main St, City, State" />
         </Field>
-        <Field label="Number of Sites (학교 갯수)">
+        <Field label="Number of Sites">
           <input
             className={inputCls}
             type="number"
@@ -184,7 +184,7 @@ export default function LeadForm({
                     next[index].name = e.target.value;
                     setSitesList(next);
                   }}
-                  className={`${inputCls} flex-1`}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                 />
                 <input
                   type="number"
@@ -197,7 +197,7 @@ export default function LeadForm({
                     next[index].cost = Number(e.target.value);
                     setSitesList(next);
                   }}
-                  className={`${inputCls} w-32`}
+                  className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                 />
                 <button
                   type="button"
