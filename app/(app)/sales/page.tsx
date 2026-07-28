@@ -247,7 +247,7 @@ export default function SalesPage() {
                     <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{lead.company || "—"}</td>
                     <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{lead.title || "—"}</td>
                     <td className="px-4 py-3 text-gray-900 font-semibold font-mono whitespace-nowrap">
-                      {projectCost > 0 ? `$${projectCost.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : "—"}
+                      {projectCost > 0 ? `$${projectCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : "—"}
                     </td>
                     {isManagement && (
                       <td className="px-4 py-3 whitespace-nowrap">

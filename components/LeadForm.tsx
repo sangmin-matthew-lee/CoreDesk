@@ -65,6 +65,46 @@ export default function LeadForm({
     }
   });
 
+  const [siteCostDisplays, setSiteCostDisplays] = useState<string[]>(() => {
+    try {
+      if (!initial.sites) return [];
+      let parsed = typeof initial.sites === "string" ? JSON.parse(initial.sites) : initial.sites;
+      while (typeof parsed === "string") {
+        parsed = JSON.parse(parsed);
+      }
+      if (Array.isArray(parsed)) {
+        return parsed.map((s: any) => {
+          const costNum = parseFloat(s.cost);
+          return isNaN(costNum) ? "" : costNum.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+        });
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  });
+
+  // Strips commas and parses float
+  const parseFormattedNumber = (val: string): number => {
+    const clean = val.replace(/,/g, "");
+    const parsed = parseFloat(clean);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  // Formats a number or numeric string to string with commas as user types
+  const formatNumberWithCommas = (val: string): string => {
+    // Strip all characters except digits and decimal point
+    let clean = val.replace(/[^\d.]/g, "");
+    // Split by decimal point to only format integer part
+    const parts = clean.split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    // Keep only one decimal point
+    if (parts.length > 2) {
+      return parts[0] + "." + parts[1];
+    }
+    return parts.join(".");
+  };
+
   const set =
     (field: keyof Lead) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
@@ -166,7 +206,10 @@ export default function LeadForm({
           <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Sites & Costs</h3>
           <button
             type="button"
-            onClick={() => setSitesList((prev) => [...prev, { name: "", cost: 0 }])}
+            onClick={() => {
+              setSitesList((prev) => [...prev, { name: "", cost: 0 }]);
+              setSiteCostDisplays((prev) => [...prev, ""]);
+            }}
             className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 border border-indigo-200 rounded-lg hover:bg-indigo-100 transition-colors"
           >
             + Add Site
@@ -195,16 +238,19 @@ export default function LeadForm({
                   className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                 />
                 <input
-                  type="number"
+                  type="text"
                   required
-                  min="0"
-                  step="any"
                   placeholder="Cost"
-                  value={site.cost === 0 ? "0" : (site.cost || "")}
+                  value={siteCostDisplays[index] ?? ""}
                   onChange={(e) => {
-                    const next = [...sitesList];
-                    next[index].cost = parseFloat(e.target.value) || 0;
-                    setSitesList(next);
+                    const formatted = formatNumberWithCommas(e.target.value);
+                    const nextDisplays = [...siteCostDisplays];
+                    nextDisplays[index] = formatted;
+                    setSiteCostDisplays(nextDisplays);
+
+                    const nextSites = [...sitesList];
+                    nextSites[index].cost = parseFormattedNumber(formatted);
+                    setSitesList(nextSites);
                   }}
                   className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"
                 />
@@ -212,6 +258,7 @@ export default function LeadForm({
                   type="button"
                   onClick={() => {
                     setSitesList((prev) => prev.filter((_, i) => i !== index));
+                    setSiteCostDisplays((prev) => prev.filter((_, i) => i !== index));
                   }}
                   className="p-2 text-red-500 hover:bg-red-50 rounded-lg border border-red-200 transition-colors"
                 >
@@ -222,7 +269,7 @@ export default function LeadForm({
               </div>
             ))}
             <div className="text-right text-xs font-semibold text-gray-600 pr-14 pt-1">
-              Total Project Cost: <span className="text-indigo-600 font-bold">${sitesList.reduce((sum, s) => sum + s.cost, 0).toLocaleString()}</span>
+              Total Project Cost: <span className="text-indigo-600 font-bold">${sitesList.reduce((sum, s) => sum + s.cost, 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
             </div>
           </div>
         )}
