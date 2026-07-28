@@ -18,8 +18,13 @@ export async function GET() {
       let projectCost = 0;
       if (lead.sites) {
         try {
-          const parsed = JSON.parse(lead.sites as string) as { name: string; cost: number }[];
-          projectCost = parsed.reduce((sum, s) => sum + s.cost, 0);
+          let parsed = typeof lead.sites === "string" ? JSON.parse(lead.sites) : lead.sites;
+          while (typeof parsed === "string") {
+            parsed = JSON.parse(parsed);
+          }
+          if (Array.isArray(parsed)) {
+            projectCost = parsed.reduce((sum, s) => sum + s.cost, 0);
+          }
         } catch {
           projectCost = 0;
         }

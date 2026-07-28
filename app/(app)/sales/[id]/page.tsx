@@ -227,19 +227,26 @@ export default function LeadDetailPage() {
                 <div className="space-y-1.5 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
                   {(() => {
                     try {
-                      const list = JSON.parse(lead.sites) as { name: string; cost: number }[];
+                      let parsed = typeof lead.sites === "string" ? JSON.parse(lead.sites) : lead.sites;
+                      while (typeof parsed === "string") {
+                        parsed = JSON.parse(parsed);
+                      }
+                      if (!Array.isArray(parsed)) return <p className="text-xs text-gray-400 italic">No sites listed</p>;
+                      const list = parsed as { name: string; cost: number }[];
                       if (list.length === 0) return <p className="text-xs text-gray-400 italic">No sites listed</p>;
                       return (
                         <>
                           {list.map((site, i) => (
                             <div key={i} className="flex justify-between items-center text-xs">
-                              <span className="text-gray-700 font-medium">{site.name}</span>
-                              <span className="text-gray-600 font-mono font-semibold">${site.cost.toLocaleString()}</span>
+                              <span className="text-gray-700 font-medium">
+                                <span className="text-gray-400 font-semibold mr-1">{i + 1}.</span> {site.name}
+                              </span>
+                              <span className="text-gray-600 font-mono font-semibold">${site.cost.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
                             </div>
                           ))}
                           <div className="flex justify-between items-center text-xs font-bold pt-1.5 border-t border-dashed border-gray-200">
-                            <span className="text-gray-800">Total Cost</span>
-                            <span className="text-indigo-600 font-bold">${list.reduce((sum, s) => sum + s.cost, 0).toLocaleString()}</span>
+                            <span className="text-gray-800">Total Cost ({list.length} sites)</span>
+                            <span className="text-indigo-600 font-bold">${list.reduce((sum, s) => sum + s.cost, 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
                           </div>
                         </>
                       );

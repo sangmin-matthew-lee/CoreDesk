@@ -54,7 +54,12 @@ export default function LeadForm({
 
   const [sitesList, setSitesList] = useState<LeadSite[]>(() => {
     try {
-      return initial.sites ? JSON.parse(initial.sites) : [];
+      if (!initial.sites) return [];
+      let parsed = typeof initial.sites === "string" ? JSON.parse(initial.sites) : initial.sites;
+      while (typeof parsed === "string") {
+        parsed = JSON.parse(parsed);
+      }
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
       return [];
     }
@@ -174,6 +179,9 @@ export default function LeadForm({
           <div className="space-y-2">
             {sitesList.map((site, index) => (
               <div key={index} className="flex items-center gap-3">
+                <span className="text-xs font-bold text-gray-400 w-5 text-right shrink-0">
+                  {index + 1}.
+                </span>
                 <input
                   type="text"
                   required
@@ -190,11 +198,12 @@ export default function LeadForm({
                   type="number"
                   required
                   min="0"
+                  step="any"
                   placeholder="Cost"
-                  value={site.cost || ""}
+                  value={site.cost === 0 ? "0" : (site.cost || "")}
                   onChange={(e) => {
                     const next = [...sitesList];
-                    next[index].cost = Number(e.target.value);
+                    next[index].cost = parseFloat(e.target.value) || 0;
                     setSitesList(next);
                   }}
                   className="w-32 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition"

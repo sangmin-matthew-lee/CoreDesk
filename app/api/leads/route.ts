@@ -59,7 +59,18 @@ export async function POST(req: NextRequest) {
         ? assigned_to
         : user.userId;
 
-    const sitesStr = sites ? JSON.stringify(sites) : null;
+    let sitesStr = null;
+    if (sites) {
+      try {
+        let parsed = typeof sites === "string" ? JSON.parse(sites) : sites;
+        while (typeof parsed === "string") {
+          parsed = JSON.parse(parsed);
+        }
+        sitesStr = JSON.stringify(parsed);
+      } catch {
+        sitesStr = typeof sites === "string" ? sites : JSON.stringify(sites);
+      }
+    }
     const numberOfSitesVal = typeof number_of_sites === "number" ? number_of_sites : null;
 
     const result = db

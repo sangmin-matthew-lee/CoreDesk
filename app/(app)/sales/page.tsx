@@ -222,8 +222,13 @@ export default function SalesPage() {
                 let projectCost = 0;
                 if (lead.sites) {
                   try {
-                    const parsed = JSON.parse(lead.sites) as { name: string; cost: number }[];
-                    projectCost = parsed.reduce((sum, s) => sum + s.cost, 0);
+                    let parsed = typeof lead.sites === "string" ? JSON.parse(lead.sites) : lead.sites;
+                    while (typeof parsed === "string") {
+                      parsed = JSON.parse(parsed);
+                    }
+                    if (Array.isArray(parsed)) {
+                      projectCost = parsed.reduce((sum, s) => sum + s.cost, 0);
+                    }
                   } catch {
                     projectCost = 0;
                   }
@@ -242,7 +247,7 @@ export default function SalesPage() {
                     <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{lead.company || "—"}</td>
                     <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{lead.title || "—"}</td>
                     <td className="px-4 py-3 text-gray-900 font-semibold font-mono whitespace-nowrap">
-                      {projectCost > 0 ? `$${projectCost.toLocaleString()}` : "—"}
+                      {projectCost > 0 ? `$${projectCost.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : "—"}
                     </td>
                     {isManagement && (
                       <td className="px-4 py-3 whitespace-nowrap">
