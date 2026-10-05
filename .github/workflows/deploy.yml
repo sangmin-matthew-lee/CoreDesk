@@ -95,9 +95,27 @@ jobs:
           done
 
       - name: Copy deployment files to VM
+        env:
+          DOCKER_IMAGE_NAME: ${{ secrets.DOCKER_HUB_USERNAME }}/coredesk:latest
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+          LETSENCRYPT_EMAIL: ${{ secrets.LETSENCRYPT_EMAIL }}
         run: |
-          # Copy docker-compose.yml
+          TARGET_DOMAIN="${DOMAIN_NAME:-geicrm.duckdns.org}"
+          TARGET_EMAIL="${LETSENCRYPT_EMAIL:-admin@geicrm.duckdns.org}"
+
+          # Create .env locally on runner
+          cat << EOF > .env
+DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME}
+JWT_SECRET=${JWT_SECRET}
+DOMAIN_NAME=${TARGET_DOMAIN}
+APP_URL=https://${TARGET_DOMAIN}
+LETSENCRYPT_EMAIL=${TARGET_EMAIL}
+EOF
+
+          # Copy docker-compose.yml and .env
           scp -o StrictHostKeyChecking=no ./docker-compose.yml debian@${{ steps.tf-ip.outputs.vm_ip }}:~/docker-compose.yml
+          scp -o StrictHostKeyChecking=no ./.env debian@${{ steps.tf-ip.outputs.vm_ip }}:~/.env
           # Create nginx templates directory on VM
           ssh -o StrictHostKeyChecking=no debian@${{ steps.tf-ip.outputs.vm_ip }} "mkdir -p ~/nginx/templates"
           # Copy nginx templates to VM
@@ -105,43 +123,30 @@ jobs:
 
       - name: Deploy to VM via SSH
         run: |
-          ssh -o StrictHostKeyChecking=no debian@${{ steps.tf-ip.outputs.vm_ip }} "
+          ssh -o StrictHostKeyChecking=no debian@${{ steps.tf-ip.outputs.vm_ip }} 'bash -s' << 'EOF'
             set -e
-            
-            # Setup environment variables
-            DOMAIN_NAME="${{ secrets.DOMAIN_NAME }}"
-            if [ -z "$DOMAIN_NAME" ]; then
-              DOMAIN_NAME="geicrm.duckdns.org"
-            fi
-            
-            LETSENCRYPT_EMAIL="${{ secrets.LETSENCRYPT_EMAIL }}"
-            if [ -z "$LETSENCRYPT_EMAIL" ]; then
-              LETSENCRYPT_EMAIL="admin@geicrm.duckdns.org"
-            fi
-            
-            echo "DOCKER_IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/coredesk:latest" > .env
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-            echo "DOMAIN_NAME=$DOMAIN_NAME" >> .env
-            echo "APP_URL=https://$DOMAIN_NAME" >> .env
-            
+
+            # Source environment variables from .env
+            set -a
+            source ~/.env
+            set +a
+
             # Bootstrap SSL certificates using standalone Certbot if not present
-            if ! sudo test -d "certbot/conf/live/$DOMAIN_NAME"; then
-              echo "SSL Certificates not found for $DOMAIN_NAME. Bootstrapping via Certbot..."
-              # Stop any running containers (like the old web container on port 80) to free the port
+            if ! sudo test -d "certbot/conf/live/${DOMAIN_NAME}"; then
+              echo "SSL Certificates not found for ${DOMAIN_NAME}. Bootstrapping via Certbot..."
               sudo docker compose down || true
-              # Run temporary standalone certbot to get certs
               sudo docker run --rm \
                 -p 80:80 \
                 -v $(pwd)/certbot/conf:/etc/letsencrypt \
                 -v $(pwd)/certbot/www:/var/www/certbot \
                 certbot/certbot certonly --standalone \
                 --preferred-challenges http \
-                --email $LETSENCRYPT_EMAIL \
+                --email "${LETSENCRYPT_EMAIL}" \
                 --agree-tos --no-eff-email \
-                -d $DOMAIN_NAME \
+                -d "${DOMAIN_NAME}" \
                 --keep-until-expiring -n
             fi
-            
+
             # Pull new image
             sudo docker compose pull
             # Start/update the containers
@@ -150,5 +155,5 @@ jobs:
             sudo docker compose restart nginx
             # Prune old unused images to save disk space on e2-micro
             sudo docker image prune -f
-          "
+EOF
 
