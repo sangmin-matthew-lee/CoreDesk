@@ -105,55 +105,22 @@ jobs:
           TARGET_EMAIL="${LETSENCRYPT_EMAIL:-admin@geicrm.duckdns.org}"
 
           # Create .env locally on runner
-          cat << EOF > .env
-DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME}
-JWT_SECRET=${JWT_SECRET}
-DOMAIN_NAME=${TARGET_DOMAIN}
-APP_URL=https://${TARGET_DOMAIN}
-LETSENCRYPT_EMAIL=${TARGET_EMAIL}
-EOF
+          echo "DOCKER_IMAGE_NAME=${DOCKER_IMAGE_NAME}" > .env
+          echo "JWT_SECRET=${JWT_SECRET}" >> .env
+          echo "DOMAIN_NAME=${TARGET_DOMAIN}" >> .env
+          echo "APP_URL=https://${TARGET_DOMAIN}" >> .env
+          echo "LETSENCRYPT_EMAIL=${TARGET_EMAIL}" >> .env
 
-          # Copy docker-compose.yml and .env
+          # Copy compose, env, and deploy script to VM
           scp -o StrictHostKeyChecking=no ./docker-compose.yml debian@${{ steps.tf-ip.outputs.vm_ip }}:~/docker-compose.yml
           scp -o StrictHostKeyChecking=no ./.env debian@${{ steps.tf-ip.outputs.vm_ip }}:~/.env
-          # Create nginx templates directory on VM
-          ssh -o StrictHostKeyChecking=no debian@${{ steps.tf-ip.outputs.vm_ip }} "mkdir -p ~/nginx/templates"
-          # Copy nginx templates to VM
+          scp -o StrictHostKeyChecking=no ./scripts/deploy.sh debian@${{ steps.tf-ip.outputs.vm_ip }}:~/deploy.sh
+
+          # Set permissions and copy nginx templates to VM
+          ssh -o StrictHostKeyChecking=no debian@${{ steps.tf-ip.outputs.vm_ip }} "chmod +x ~/deploy.sh && mkdir -p ~/nginx/templates"
           scp -o StrictHostKeyChecking=no -r ./nginx/templates/* debian@${{ steps.tf-ip.outputs.vm_ip }}:~/nginx/templates/
 
       - name: Deploy to VM via SSH
         run: |
-          ssh -o StrictHostKeyChecking=no debian@${{ steps.tf-ip.outputs.vm_ip }} 'bash -s' << 'EOF'
-            set -e
-
-            # Source environment variables from .env
-            set -a
-            source ~/.env
-            set +a
-
-            # Bootstrap SSL certificates using standalone Certbot if not present
-            if ! sudo test -d "certbot/conf/live/${DOMAIN_NAME}"; then
-              echo "SSL Certificates not found for ${DOMAIN_NAME}. Bootstrapping via Certbot..."
-              sudo docker compose down || true
-              sudo docker run --rm \
-                -p 80:80 \
-                -v $(pwd)/certbot/conf:/etc/letsencrypt \
-                -v $(pwd)/certbot/www:/var/www/certbot \
-                certbot/certbot certonly --standalone \
-                --preferred-challenges http \
-                --email "${LETSENCRYPT_EMAIL}" \
-                --agree-tos --no-eff-email \
-                -d "${DOMAIN_NAME}" \
-                --keep-until-expiring -n
-            fi
-
-            # Pull new image
-            sudo docker compose pull
-            # Start/update the containers
-            sudo docker compose up -d --remove-orphans
-            # Restart nginx so it cleanly re-resolves the upstream web container IP
-            sudo docker compose restart nginx
-            # Prune old unused images to save disk space on e2-micro
-            sudo docker image prune -f
-EOF
+          ssh -o StrictHostKeyChecking=no debian@${{ steps.tf-ip.outputs.vm_ip }} "bash ~/deploy.sh"
 
