@@ -109,11 +109,18 @@ jobs:
             set -e
             
             # Setup environment variables
-            export DOMAIN_NAME='${{ secrets.DOMAIN_NAME }}'
-            export LETSENCRYPT_EMAIL='${{ secrets.LETSENCRYPT_EMAIL }}'
+            DOMAIN_NAME="${{ secrets.DOMAIN_NAME }}"
+            if [ -z "$DOMAIN_NAME" ]; then
+              DOMAIN_NAME="geicrm.duckdns.org"
+            fi
             
-            echo 'DOCKER_IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/coredesk:latest' > .env
-            echo 'JWT_SECRET=${{ secrets.JWT_SECRET }}' >> .env
+            LETSENCRYPT_EMAIL="${{ secrets.LETSENCRYPT_EMAIL }}"
+            if [ -z "$LETSENCRYPT_EMAIL" ]; then
+              LETSENCRYPT_EMAIL="admin@geicrm.duckdns.org"
+            fi
+            
+            echo "DOCKER_IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/coredesk:latest" > .env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
             echo "DOMAIN_NAME=$DOMAIN_NAME" >> .env
             echo "APP_URL=https://$DOMAIN_NAME" >> .env
             
@@ -139,6 +146,8 @@ jobs:
             sudo docker compose pull
             # Start/update the containers
             sudo docker compose up -d --remove-orphans
+            # Restart nginx so it cleanly re-resolves the upstream web container IP
+            sudo docker compose restart nginx
             # Prune old unused images to save disk space on e2-micro
             sudo docker image prune -f
           "
