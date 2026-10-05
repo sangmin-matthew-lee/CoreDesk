@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
 import { CHECKLIST_ITEMS } from "@/lib/types";
+import { getCurrentUser } from "@/lib/auth";
 import * as XLSX from "xlsx";
 
 export const dynamic = "force-dynamic";
@@ -8,7 +9,19 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const leads = db.prepare(`SELECT * FROM leads ORDER BY updated_at DESC`).all() as Record<string, unknown>[];
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const isManagement = user.dept === "Management" || user.dept === "Super Admin";
+
+    // 1099 Sales Contractors can only export their own assigned leads; W2 Management can export all active leads
+    const leads = (
+      isManagement
+        ? db.prepare(`SELECT * FROM leads WHERE is_deleted = 0 ORDER BY updated_at DESC`).all()
+        : db.prepare(`SELECT * FROM leads WHERE assigned_to = ? AND is_deleted = 0 ORDER BY updated_at DESC`).all(user.userId)
+    ) as Record<string, unknown>[];
 
     const rows = leads.map((lead) => {
       const checklistRows = db

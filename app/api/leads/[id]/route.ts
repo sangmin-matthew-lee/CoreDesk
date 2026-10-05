@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { CHECKLIST_ITEMS } from "@/lib/types";
 import { getCurrentUser } from "@/lib/auth";
+import { convertLeadToProject } from "@/lib/projects";
 
 export const dynamic = "force-dynamic";
 
@@ -39,6 +40,9 @@ export async function GET(_req: NextRequest, { params }: Params) {
       .get(id) as LeadRow | undefined;
 
     if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+    if (lead.is_deleted && user.dept !== "Management" && user.dept !== "Super Admin") {
+      return NextResponse.json({ error: "Lead not found" }, { status: 404 });
+    }
     if (!canAccessLead(lead, user.userId, user.dept)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
@@ -53,7 +57,31 @@ export async function GET(_req: NextRequest, { params }: Params) {
       checklist[item.key] = row ? row.completed === 1 : false;
     }
 
-    return NextResponse.json({ ...lead, checklist });
+    const linkedProject = db
+      .prepare(
+        `SELECT
+           p.id,
+           p.name,
+           p.category,
+           p.sub_status,
+           p.site_name,
+           p.client_address,
+           p.estimated_cost,
+           p.pge_application_id,
+           p.assigned_pm_id,
+           p.is_deleted,
+           p.deleted_at,
+           p.updated_at,
+           u.first_name || ' ' || u.last_name AS assigned_pm_name
+         FROM projects p
+         LEFT JOIN users u ON p.assigned_pm_id = u.id
+         WHERE p.lead_id = ? OR p.source_crm_deal_id = ?
+         ORDER BY p.is_deleted ASC, p.id DESC
+         LIMIT 1`
+      )
+      .get(id, id);
+
+    return NextResponse.json({ ...lead, checklist, linked_project: linkedProject || null });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Failed to fetch lead" }, { status: 500 });
@@ -129,6 +157,16 @@ export async function PUT(req: NextRequest, { params }: Params) {
       if (completedCount.cnt === totalCount) {
         db.prepare(`UPDATE leads SET status = 'Closed', updated_at = datetime('now') WHERE id = ?`).run(id);
       }
+
+      // Qualification Trigger (Field-based): Auto-generate project when opportunity reaches "Audit Scheduled"
+      if (checklist.audit_scheduled) {
+        try {
+          const isManagement = user.dept === "Management" || user.dept === "Super Admin";
+          convertLeadToProject(id, isManagement ? newAssignedTo : null);
+        } catch (e) {
+          console.error("Auto-conversion to project failed:", e);
+        }
+      }
     }
 
     const lead = db
@@ -149,7 +187,31 @@ export async function PUT(req: NextRequest, { params }: Params) {
       updatedChecklist[item.key] = row ? row.completed === 1 : false;
     }
 
-    return NextResponse.json({ ...lead, checklist: updatedChecklist });
+    const linkedProject = db
+      .prepare(
+        `SELECT
+           p.id,
+           p.name,
+           p.category,
+           p.sub_status,
+           p.site_name,
+           p.client_address,
+           p.estimated_cost,
+           p.pge_application_id,
+           p.assigned_pm_id,
+           p.is_deleted,
+           p.deleted_at,
+           p.updated_at,
+           u.first_name || ' ' || u.last_name AS assigned_pm_name
+         FROM projects p
+         LEFT JOIN users u ON p.assigned_pm_id = u.id
+         WHERE p.lead_id = ? OR p.source_crm_deal_id = ?
+         ORDER BY p.is_deleted ASC, p.id DESC
+         LIMIT 1`
+      )
+      .get(id, id);
+
+    return NextResponse.json({ ...lead, checklist: updatedChecklist, linked_project: linkedProject || null });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Failed to update lead" }, { status: 500 });
@@ -162,14 +224,24 @@ export async function DELETE(_req: NextRequest, { params }: Params) {
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { id } = await params;
-    const existing = db.prepare(`SELECT id, assigned_to FROM leads WHERE id = ?`).get(id) as LeadRow | undefined;
+    const existing = db.prepare(`SELECT id, assigned_to, is_deleted FROM leads WHERE id = ?`).get(id) as (LeadRow & { is_deleted?: number }) | undefined;
     if (!existing) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
     if (!canAccessLead(existing, user.userId, user.dept)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    db.prepare(`DELETE FROM leads WHERE id = ?`).run(id);
-    return NextResponse.json({ success: true });
+    // Soft delete: keep row in SQLite, preserve PM project links safely, mark as deleted
+    db.prepare(`
+      UPDATE leads SET
+        is_deleted = 1,
+        deleted_at = datetime('now'),
+        deleted_by = ?,
+        original_assigned_to = COALESCE(original_assigned_to, assigned_to),
+        updated_at = datetime('now')
+      WHERE id = ?
+    `).run(user.userId, id);
+
+    return NextResponse.json({ success: true, message: "Lead moved to trash" });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Failed to delete lead" }, { status: 500 });

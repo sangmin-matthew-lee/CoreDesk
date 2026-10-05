@@ -23,10 +23,10 @@ export async function GET() {
 
     let leads;
     if (user.dept === "Management" || user.dept === "Super Admin") {
-      leads = db.prepare(`${baseSelect} ORDER BY l.updated_at DESC`).all();
+      leads = db.prepare(`${baseSelect} WHERE l.is_deleted = 0 ORDER BY l.updated_at DESC`).all();
     } else {
       leads = db
-        .prepare(`${baseSelect} WHERE l.assigned_to = ? ORDER BY l.updated_at DESC`)
+        .prepare(`${baseSelect} WHERE l.assigned_to = ? AND l.is_deleted = 0 ORDER BY l.updated_at DESC`)
         .all(user.userId);
     }
 

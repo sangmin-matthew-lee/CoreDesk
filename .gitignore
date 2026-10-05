@@ -18,12 +18,22 @@
 /out/
 /build
 
-# Local Database (SQLite, etc.)
-/data/*.db
-/data/*.db-*
+# Local Database & Data Storage (CRITICAL - Customer Data & Trade Secrets)
+/data/
+/data/*
 *.db
+*.db-*
 *.sqlite
 *.sqlite3
+*.sql
+*.dump
+*.bak
+
+# Spreadsheet & Report Exports (CRITICAL - Customer Lead & Financial Data)
+*.xlsx
+*.xls
+*.csv
+*.tsv
 
 # Debug & Logs
 *.log
@@ -41,10 +51,21 @@ logs/
 .env.test.local
 .env.production.local
 .env*.local
+.env.development
+.env.test
+.env.production
+.env.staging
+.env.backup
 *.env
-# Credentials & API Keys
+*.env.*
+
+# Credentials, Service Account Keys & API Keys (CRITICAL for security)
 *credentials*.json
 *secret*.json
+*service-account*.json
+*service_account*.json
+*gcp*.json
+*firebase*.json
 jwt-secret*
 
 # Encryption keys, certificates & private keys (CRITICAL for security)
@@ -58,13 +79,26 @@ jwt-secret*
 *.p12
 *.pkcs12
 *.ssh
-id_rsa
-id_dsa
-id_ecdsa
-id_ed25519
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+
+# Scratch & Temporary Testing Folders
+/scratch/
+scratch/
+temp/
+tmp/
+*.tmp
+
+# AI Assistants & Local Agent Cache
+.agents/
+.claude/
+.gemini/
 
 # IDEs, Editors & System files
 .DS_Store
+**/.DS_Store
 Thumbs.db
 ehthumbs.db
 Desktop.ini

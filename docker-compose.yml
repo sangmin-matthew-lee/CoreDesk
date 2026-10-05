@@ -11,6 +11,13 @@ services:
     environment:
       - NODE_ENV=production
       - JWT_SECRET
+      - APP_URL
+      - SMTP_HOST
+      - SMTP_PORT
+      - SMTP_USER
+      - SMTP_PASS
+      - SMTP_FROM
+      - INITIAL_ADMIN_PASSWORD
 
   nginx:
     image: nginx:alpine

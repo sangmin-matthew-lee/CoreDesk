@@ -9,10 +9,15 @@ export interface JWTPayload {
   lastName: string;
 }
 
-const getSecret = () =>
-  new TextEncoder().encode(
-    process.env.JWT_SECRET || "coredesk-dev-secret-please-change-in-production"
+const getSecret = () => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret && process.env.NODE_ENV === "production") {
+    console.warn("⚠️ [SECURITY WARNING] JWT_SECRET environment variable is not set! Using default fallback is insecure in production.");
+  }
+  return new TextEncoder().encode(
+    secret || "coredesk-dev-secret-please-change-in-production"
   );
+};
 
 export const TOKEN_COOKIE = "coredesk_token";
 export const TOKEN_MAX_AGE = 60 * 60 * 24 * 7; // 7 days in seconds

@@ -40,6 +40,22 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             </Link>
             {(user.dept === "Management" || user.dept === "Super Admin") && (
               <Link
+                href="/projects"
+                className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+              >
+                Project Management
+              </Link>
+            )}
+            {(user.dept === "Management" || user.dept === "Super Admin") && (
+              <Link
+                href="/service-calls"
+                className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+              >
+                Service Calls
+              </Link>
+            )}
+            {(user.dept === "Management" || user.dept === "Super Admin") && (
+              <Link
                 href="/accounts"
                 className="px-3 py-1.5 text-sm font-medium text-gray-600 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
               >

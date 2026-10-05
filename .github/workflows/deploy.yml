@@ -114,7 +114,8 @@ jobs:
             
             echo 'DOCKER_IMAGE_NAME=${{ secrets.DOCKER_HUB_USERNAME }}/coredesk:latest' > .env
             echo 'JWT_SECRET=${{ secrets.JWT_SECRET }}' >> .env
-            echo \"DOMAIN_NAME=\$DOMAIN_NAME\" >> .env
+            echo "DOMAIN_NAME=$DOMAIN_NAME" >> .env
+            echo "APP_URL=https://$DOMAIN_NAME" >> .env
             
             # Bootstrap SSL certificates using standalone Certbot if not present
             if ! sudo test -d "certbot/conf/live/$DOMAIN_NAME"; then
