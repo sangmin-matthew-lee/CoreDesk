@@ -275,7 +275,7 @@ export default function DeletedProjectsPage() {
                       <td className="px-5 py-4 font-mono text-xs font-semibold text-gray-900">
                         ${(p.estimated_cost || 0).toLocaleString(undefined, {
                           minimumFractionDigits: 0,
-                          maximumFractionDigits: 0,
+                          maximumFractionDigits: 2,
                         })}
                       </td>
 

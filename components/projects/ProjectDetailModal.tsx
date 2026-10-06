@@ -55,7 +55,7 @@ export default function ProjectDetailModal({
   const [subStatus, setSubStatus] = useState<ProjectSubStatus>("AUDIT_SCHEDULED");
   const [projectType, setProjectType] = useState("PG&E OBF");
   const [pgeAppId, setPgeAppId] = useState("");
-  const [estimatedCost, setEstimatedCost] = useState<number>(0);
+  const [estimatedCost, setEstimatedCost] = useState<number | string>(0);
   const [assignedPmId, setAssignedPmId] = useState<number | "">("");
   const [targetDate, setTargetDate] = useState("");
   const [notes, setNotes] = useState("");
@@ -208,7 +208,7 @@ export default function ProjectDetailModal({
           sub_status: validSubStatus,
           project_type: projectType,
           pge_application_id: pgeAppId.trim() || null,
-          estimated_cost: Number(estimatedCost) || 0,
+          estimated_cost: isNaN(parseFloat(String(estimatedCost))) ? 0 : parseFloat(String(estimatedCost)),
           assigned_pm_id: assignedPmId === "" ? null : Number(assignedPmId),
           target_completion_date: targetDate || null,
           notes,
@@ -469,10 +469,10 @@ export default function ProjectDetailModal({
                 <input
                   type="number"
                   min="0"
-                  step="5000"
+                  step="any"
                   disabled={!isManagement}
                   value={estimatedCost}
-                  onChange={(e) => setEstimatedCost(Number(e.target.value))}
+                  onChange={(e) => setEstimatedCost(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none disabled:bg-gray-100/70 disabled:text-gray-700 disabled:cursor-not-allowed"
                 />
               </div>

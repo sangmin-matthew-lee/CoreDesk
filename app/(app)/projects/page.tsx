@@ -429,7 +429,7 @@ function ProjectsContent() {
                         <td className="px-5 py-3.5 whitespace-nowrap font-mono font-bold text-gray-900">
                           ${p.estimated_cost.toLocaleString(undefined, {
                             minimumFractionDigits: 0,
-                            maximumFractionDigits: 0,
+                            maximumFractionDigits: 2,
                           })}
                         </td>
                         <td className="px-5 py-3.5 whitespace-nowrap">

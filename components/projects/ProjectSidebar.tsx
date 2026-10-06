@@ -279,7 +279,7 @@ export default function ProjectSidebar({
           <div className="text-xl font-bold font-mono tracking-tight text-white">
             ${totalPortfolioValue.toLocaleString(undefined, {
               minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
+              maximumFractionDigits: 2,
             })}
           </div>
           <div className="flex items-center justify-between text-[11px] text-indigo-300/80 mt-2 pt-2 border-t border-white/10">

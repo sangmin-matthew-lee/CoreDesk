@@ -94,7 +94,7 @@ export default function ProjectCard({ project, onClick, compact = false }: Proje
           <span className="font-mono font-bold text-gray-900 text-xs">
             ${project.estimated_cost.toLocaleString(undefined, {
               minimumFractionDigits: 0,
-              maximumFractionDigits: 0,
+              maximumFractionDigits: 2,
             })}
           </span>
         </div>

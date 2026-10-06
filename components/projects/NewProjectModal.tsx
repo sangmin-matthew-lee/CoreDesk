@@ -44,7 +44,7 @@ export default function NewProjectModal({
   });
   const [projectType, setProjectType] = useState("PG&E OBF");
   const [pgeAppId, setPgeAppId] = useState("");
-  const [estimatedCost, setEstimatedCost] = useState<number>();
+  const [estimatedCost, setEstimatedCost] = useState<number | string>("");
   const [assignedPmId, setAssignedPmId] = useState<number | "">("");
   const [targetDate, setTargetDate] = useState("");
   const [notes, setNotes] = useState("");
@@ -66,7 +66,7 @@ export default function NewProjectModal({
       setKeyContacts("");
       setProjectType("PG&E OBF");
       setPgeAppId("");
-      setEstimatedCost(undefined);
+      setEstimatedCost("");
       setAssignedPmId("");
       setTargetDate("");
       setNotes("");
@@ -143,7 +143,7 @@ export default function NewProjectModal({
           project_type: projectType,
           utility_provider: "PG&E",
           pge_application_id: pgeAppId.trim() || null,
-          estimated_cost: Number(estimatedCost) || 0,
+          estimated_cost: isNaN(parseFloat(String(estimatedCost))) ? 0 : parseFloat(String(estimatedCost)),
           assigned_pm_id: assignedPmId === "" ? null : Number(assignedPmId),
           target_completion_date: targetDate || null,
           notes: notes.trim() || null,
@@ -309,9 +309,10 @@ export default function NewProjectModal({
               <input
                 type="number"
                 min="0"
-                step="5000"
+                step="any"
                 value={estimatedCost}
-                onChange={(e) => setEstimatedCost(Number(e.target.value))}
+                onChange={(e) => setEstimatedCost(e.target.value)}
+                placeholder="0.00"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono focus:ring-2 focus:ring-indigo-500 focus:outline-none"
               />
             </div>
